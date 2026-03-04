@@ -1,0 +1,79 @@
+.board {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.board-row {
+  display: flex;
+  gap: 3px;
+}
+
+.board-cell {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #16213e;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+  user-select: none;
+}
+
+.board-cell:hover:not(.blocked) {
+  transform: scale(1.04);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+.board-cell.blocked {
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.board-cell.target {
+  box-shadow: inset 0 0 0 2.5px #f1c40f, 0 0 10px rgba(241, 196, 15, 0.3);
+  background: #2c2c1a;
+}
+
+.board-cell.occupied {
+  cursor: pointer;
+}
+
+.board-cell.occupied:hover {
+  filter: brightness(1.2);
+}
+
+.board-cell.preview-valid {
+  cursor: pointer;
+}
+
+.board-cell.preview-invalid {
+  cursor: not-allowed;
+}
+
+.cell-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.board-cell.occupied .cell-label {
+  color: #fff;
+  font-weight: 700;
+}
+
+.board-cell.target .cell-label {
+  color: #f1c40f;
+  font-weight: 700;
+}
