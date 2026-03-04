@@ -75,6 +75,33 @@ export function getPieces(): PieceDefinition[] {
   return _cached;
 }
 
+const flipIndexCache = new Map<number, number[]>();
+
+export function getVerticalFlipIndex(
+  piece: PieceDefinition,
+  index: number
+): number {
+  let mapping = flipIndexCache.get(piece.id);
+  if (!mapping) {
+    const keyToIndex = new Map<string, number>();
+    piece.orientations.forEach((o, i) => {
+      keyToIndex.set(coordsKey(normalize(o.cells)), i);
+    });
+
+    mapping = piece.orientations.map((o, i) => {
+      const flippedCells = normalize(flipHorizontal(o.cells));
+      const key = coordsKey(flippedCells);
+      const target = keyToIndex.get(key);
+      return target == null ? i : target;
+    });
+
+    flipIndexCache.set(piece.id, mapping);
+  }
+
+  if (index < 0 || index >= mapping.length) return index;
+  return mapping[index];
+}
+
 export function getPieceById(id: number): PieceDefinition | undefined {
   return getPieces().find((p) => p.id === id);
 }

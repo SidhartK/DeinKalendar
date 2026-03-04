@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { PieceDefinition, PIECE_COLORS } from "../types";
+import { getVerticalFlipIndex } from "../utils/pieces";
 import PiecePreview from "./PiecePreview";
 import "./PieceTray.css";
 
@@ -30,12 +31,10 @@ export default function PieceTray({
 
   const flip = useCallback(() => {
     if (!selectedPiece) return;
-    // Jump to the mirror orientation: skip half the orientations
-    const half = Math.floor(orientationCount / 2);
-    if (half === 0) return;
-    const flipped = (selectedOrientation + half) % orientationCount;
-    onSetOrientation(flipped);
-  }, [selectedPiece, selectedOrientation, orientationCount, onSetOrientation]);
+    const nextIndex = getVerticalFlipIndex(selectedPiece, selectedOrientation);
+    if (nextIndex === selectedOrientation) return;
+    onSetOrientation(nextIndex);
+  }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
