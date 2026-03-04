@@ -9,6 +9,7 @@ import {
 import Board from "./components/Board";
 import PieceTray from "./components/PieceTray";
 import DateSelector from "./components/DateSelector";
+import SolverPanel from "./components/SolverPanel";
 import "./App.css";
 
 interface ReducerState {
@@ -207,6 +208,10 @@ export default function App() {
             selectedOrientation={selectedOrientation}
             onSelectPiece={handleSelectPiece}
             onSetOrientation={handleSetOrientation}
+          />
+          <SolverPanel
+            targetMonth={targetMonth}
+            targetDay={targetDay}
           />
         </aside>
       </main>
