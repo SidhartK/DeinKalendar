@@ -48,6 +48,14 @@ export const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ] as const;
 
+export type GameAction =
+  | { type: "SET_TARGET_MONTH"; month: string }
+  | { type: "SET_TARGET_DAY"; day: number }
+  | { type: "SELECT_PIECE"; pieceId: number | null }
+  | { type: "SET_ORIENTATION"; index: number }
+  | { type: "PLACE_PIECE"; piece: PlacedPiece }
+  | { type: "REMOVE_PIECE"; pieceId: number };
+
 export const PIECE_COLORS: Record<number, string> = {
   1: "#e74c3c",
   2: "#3498db",
