@@ -33,6 +33,26 @@ function coordsKey(cells: Coord[]): string {
   return cells.map(([r, c]) => `${r},${c}`).join("|");
 }
 
+function cellsToAscii(cells: Coord[]): string {
+  if (cells.length === 0) return "";
+
+  const norm = normalize(cells);
+  const maxR = Math.max(...norm.map(([r]) => r));
+  const maxC = Math.max(...norm.map(([, c]) => c));
+  const cellSet = new Set(norm.map(([r, c]) => `${r},${c}`));
+
+  const lines: string[] = [];
+  for (let r = 0; r <= maxR; r++) {
+    let line = "";
+    for (let c = 0; c <= maxC; c++) {
+      line += cellSet.has(`${r},${c}`) ? "X" : ".";
+    }
+    lines.push(line);
+  }
+
+  return lines.join("\n");
+}
+
 function generateOrientations(cells: Coord[]): Orientation[] {
   const seen = new Set<string>();
   const orientations: Orientation[] = [];
@@ -47,6 +67,7 @@ function generateOrientations(cells: Coord[]): Orientation[] {
       if (!seen.has(key)) {
         seen.add(key);
         orientations.push({ cells: norm });
+        console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(norm)}\n`);
       }
       current = rotate90(current);
     }
