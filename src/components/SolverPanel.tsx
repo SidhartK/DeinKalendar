@@ -1,10 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import type { PlacedPiece } from "../types";
 import { getPieces } from "../utils/pieces";
 import "./SolverPanel.css";
 
 interface SolverPanelProps {
   targetMonth: string;
   targetDay: number;
+  placedPieces: PlacedPiece[];
 }
 
 type SolverStatus = "idle" | "solving" | "done";
@@ -20,6 +22,7 @@ function formatTime(ms: number): string {
 export default function SolverPanel({
   targetMonth,
   targetDay,
+  placedPieces,
 }: SolverPanelProps) {
   const [status, setStatus] = useState<SolverStatus>("idle");
   const [solutionCount, setSolutionCount] = useState(0);
@@ -46,7 +49,7 @@ export default function SolverPanel({
     setStatus("idle");
     setSolutionCount(0);
     setElapsed(0);
-  }, [targetMonth, targetDay, cleanup]);
+  }, [targetMonth, targetDay, placedPieces, cleanup]);
 
   const handleStart = useCallback(() => {
     cleanup();
@@ -86,6 +89,12 @@ export default function SolverPanel({
     };
 
     const pieces = getPieces();
+    const initialPlacements = placedPieces.map((pp) => ({
+      pieceId: pp.pieceId,
+      row: pp.row,
+      col: pp.col,
+      orientationIndex: pp.orientationIndex,
+    }));
     worker.postMessage({
       type: "start",
       targetMonth,
@@ -94,8 +103,9 @@ export default function SolverPanel({
         id: p.id,
         orientations: p.orientations.map((o) => ({ cells: o.cells })),
       })),
+      initialPlacements,
     });
-  }, [targetMonth, targetDay, cleanup]);
+  }, [targetMonth, targetDay, placedPieces, cleanup]);
 
   const handleStop = useCallback(() => {
     cleanup();
@@ -105,6 +115,9 @@ export default function SolverPanel({
   return (
     <div className="solver-panel">
       <h3>Solver</h3>
+      <p className="solver-description">
+        Counts completions consistent with the current board layout.
+      </p>
       <div className="solver-controls">
         {status !== "solving" ? (
           <button className="solver-btn solve-btn" onClick={handleStart}>

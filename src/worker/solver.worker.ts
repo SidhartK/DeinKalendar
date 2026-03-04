@@ -47,6 +47,13 @@ interface SolverPiece {
   size: number;
 }
 
+interface InitialPlacement {
+  pieceId: number;
+  row: number;
+  col: number;
+  orientationIndex: number;
+}
+
 function sendMessage(msg: unknown): void {
   (self as unknown as { postMessage(m: unknown): void }).postMessage(msg);
 }
@@ -68,14 +75,20 @@ self.addEventListener("message", (e: MessageEvent) => {
         size: p.orientations[0].cells.length,
       })
     );
-    runSolver(msg.targetMonth, msg.targetDay, pieces);
+    const initialPlacements: InitialPlacement[] = Array.isArray(
+      msg.initialPlacements
+    )
+      ? msg.initialPlacements
+      : [];
+    runSolver(msg.targetMonth, msg.targetDay, pieces, initialPlacements);
   }
 });
 
 function runSolver(
   targetMonth: string,
   targetDay: number,
-  pieces: SolverPiece[]
+  pieces: SolverPiece[],
+  initialPlacements: InitialPlacement[]
 ) {
   const targets = getTargetCells(targetMonth, targetDay);
   const targetSet = new Set(targets.map(([r, c]) => `${r},${c}`));
@@ -103,6 +116,49 @@ function runSolver(
 
   let solutionCount = 0;
   let lastReportTime = 0;
+
+  const idToIndex = new Map<number, number>();
+  for (let i = 0; i < pieces.length; i++) {
+    idToIndex.set(pieces[i].id, i);
+  }
+
+  // Seed board with any pre-placed pieces. If invalid, no completions exist.
+  for (const placement of initialPlacements) {
+    const pieceIndex = idToIndex.get(placement.pieceId);
+    if (pieceIndex == null) {
+      sendMessage({ type: "done", totalCount: 0 });
+      return;
+    }
+    const solverPiece = pieces[pieceIndex];
+    const orientation =
+      solverPiece.orientations[placement.orientationIndex];
+    if (!orientation) {
+      sendMessage({ type: "done", totalCount: 0 });
+      return;
+    }
+
+    const placedCells: [number, number][] = [];
+    for (const [or, oc] of orientation.cells) {
+      const r = placement.row + or;
+      const c = placement.col + oc;
+      if (
+        r < 0 ||
+        r >= GRID_ROWS ||
+        c < 0 ||
+        c >= GRID_COLS ||
+        board[r][c] !== 0
+      ) {
+        sendMessage({ type: "done", totalCount: 0 });
+        return;
+      }
+      placedCells.push([r, c]);
+    }
+
+    for (const [r, c] of placedCells) {
+      board[r][c] = solverPiece.id;
+    }
+    used[pieceIndex] = true;
+  }
 
   function floodFillSize(startR: number, startC: number): number {
     fillStack.length = 0;
@@ -155,6 +211,12 @@ function runSolver(
       }
     }
     return false;
+  }
+
+  // Early prune in case the fixed layout already creates impossible regions.
+  if (hasIsolatedRegion()) {
+    sendMessage({ type: "done", totalCount: 0 });
+    return;
   }
 
   function backtrack(): void {

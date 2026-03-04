@@ -212,6 +212,7 @@ export default function App() {
           <SolverPanel
             targetMonth={targetMonth}
             targetDay={targetDay}
+            placedPieces={placedPieces}
           />
         </aside>
       </main>
