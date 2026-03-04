@@ -45,11 +45,14 @@ export default function PieceTray({
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
         flip();
+      } else if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        onSelectPiece(null);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [rotateForward, flip]);
+  }, [rotateForward, flip, onSelectPiece]);
 
   const unplacedPieces = pieces.filter((p) => !placedPieceIds.has(p.id));
 
@@ -80,6 +83,7 @@ export default function PieceTray({
           <button
             className="control-btn deselect-btn"
             onClick={() => onSelectPiece(null)}
+            title="Deselect (C)"
           >
             Deselect
           </button>
