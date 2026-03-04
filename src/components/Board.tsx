@@ -43,20 +43,26 @@ export default function Board({
     const orientation = selectedPiece.orientations[selectedOrientation];
     if (!orientation) return null;
 
+    const [baseR, baseC] = orientation.cells[0];
+    const anchorRow = hoverCell[0] - baseR;
+    const anchorCol = hoverCell[1] - baseC;
+
     const result = validatePlacement(
       grid,
       orientation,
-      hoverCell[0],
-      hoverCell[1],
+      anchorRow,
+      anchorCol,
       targetMonth,
       targetDay
     );
 
-    const cells = getAbsoluteCells(orientation, hoverCell[0], hoverCell[1]);
+    const cells = getAbsoluteCells(orientation, anchorRow, anchorCol);
     return {
       cells,
       valid: result.valid,
       color: PIECE_COLORS[selectedPiece.id] ?? "#888",
+      anchorRow,
+      anchorCol,
     };
   }, [selectedPiece, selectedOrientation, hoverCell, grid, targetMonth, targetDay]);
 
@@ -79,7 +85,7 @@ export default function Board({
       }
 
       if (selectedPiece && preview?.valid) {
-        onPlacePiece(row, col);
+        onPlacePiece(preview.anchorRow, preview.anchorCol);
       }
     },
     [grid, selectedPiece, preview, onPlacePiece, onRemovePiece]
