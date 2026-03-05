@@ -10,6 +10,7 @@ interface PieceTrayProps {
   selectedOrientation: number;
   onSelectPiece: (id: number | null) => void;
   onSetOrientation: (index: number) => void;
+  onRemoveLastPiece: () => void;
 }
 
 export default function PieceTray({
@@ -19,6 +20,7 @@ export default function PieceTray({
   selectedOrientation,
   onSelectPiece,
   onSetOrientation,
+  onRemoveLastPiece,
 }: PieceTrayProps) {
   const selectedPiece = pieces.find((p) => p.id === selectedPieceId) ?? null;
   const orientationCount = selectedPiece?.orientations.length ?? 0;
@@ -41,17 +43,20 @@ export default function PieceTray({
       if (e.key === "r" || e.key === "R") {
         e.preventDefault();
         rotateForward();
-      } else if (e.key === "f" || e.key === "F") {
+      } else if (e.key === "e" || e.key === "E") {
         e.preventDefault();
         flip();
-      } else if (e.key === "c" || e.key === "C") {
+      } else if (e.key === "Escape") {
         e.preventDefault();
         onSelectPiece(null);
+      } else if (e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        onRemoveLastPiece();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [rotateForward, flip, onSelectPiece]);
+  }, [rotateForward, flip, onSelectPiece, onRemoveLastPiece]);
 
   const unplacedPieces = pieces.filter((p) => !placedPieceIds.has(p.id));
 
@@ -72,7 +77,7 @@ export default function PieceTray({
             <button className="control-btn" onClick={rotateForward} title="Rotate (R)">
               ↻ Rotate
             </button>
-            <button className="control-btn" onClick={flip} title="Flip (F)">
+            <button className="control-btn" onClick={flip} title="Flip (E)">
               ↔ Flip
             </button>
           </div>
@@ -82,7 +87,7 @@ export default function PieceTray({
           <button
             className="control-btn deselect-btn"
             onClick={() => onSelectPiece(null)}
-            title="Deselect (C)"
+            title="Deselect (Esc)"
           >
             Deselect
           </button>

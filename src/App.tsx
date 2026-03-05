@@ -165,6 +165,13 @@ export default function App() {
     []
   );
 
+  const handleRemoveLastPiece = useCallback(() => {
+    if (placedPieces.length > 0) {
+      const last = placedPieces[placedPieces.length - 1];
+      dispatch({ type: "REMOVE_PIECE", pieceId: last.pieceId });
+    }
+  }, [placedPieces]);
+
   const handleMonthChange = useCallback(
     (month: string) => {
       dispatch({ type: "SET_TARGET_MONTH", month });
@@ -208,6 +215,7 @@ export default function App() {
             selectedOrientation={selectedOrientation}
             onSelectPiece={handleSelectPiece}
             onSetOrientation={handleSetOrientation}
+            onRemoveLastPiece={handleRemoveLastPiece}
           />
           <SolverPanel
             targetMonth={targetMonth}
