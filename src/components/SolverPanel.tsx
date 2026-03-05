@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import type { PlacedPiece } from "../types";
 import {
   getPieces,
@@ -13,6 +13,10 @@ interface SolverPanelProps {
   placedPieces: PlacedPiece[];
 }
 
+export interface SolverPanelRef {
+  start: () => void;
+}
+
 type SolverStatus = "idle" | "solving" | "done";
 
 function formatTime(ms: number): string {
@@ -23,11 +27,10 @@ function formatTime(ms: number): string {
   return `${m}m ${rem}s`;
 }
 
-export default function SolverPanel({
-  targetMonth,
-  targetDay,
-  placedPieces,
-}: SolverPanelProps) {
+const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function SolverPanel(
+  { targetMonth, targetDay, placedPieces },
+  ref
+) {
   const [status, setStatus] = useState<SolverStatus>("idle");
   const [solutionCount, setSolutionCount] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -114,6 +117,10 @@ export default function SolverPanel({
     });
   }, [targetMonth, targetDay, placedPieces, cleanup]);
 
+  useImperativeHandle(ref, () => ({
+    start: handleStart,
+  }), [handleStart]);
+
   const handleStop = useCallback(() => {
     cleanup();
     setStatus("done");
@@ -127,7 +134,7 @@ export default function SolverPanel({
       </p>
       <div className="solver-controls">
         {status !== "solving" ? (
-          <button className="solver-btn solve-btn" onClick={handleStart}>
+          <button className="solver-btn solve-btn" onClick={handleStart} title="Solve (F)">
             Solve
           </button>
         ) : (
@@ -156,4 +163,6 @@ export default function SolverPanel({
       )}
     </div>
   );
-}
+});
+
+export default SolverPanel;

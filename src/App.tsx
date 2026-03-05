@@ -1,4 +1,4 @@
-import { useReducer, useMemo, useCallback } from "react";
+import { useReducer, useMemo, useCallback, useRef } from "react";
 import { PlacedPiece, GameAction } from "./types";
 import { createEmptyGrid } from "./utils/board";
 import { getPieces, getPieceById } from "./utils/pieces";
@@ -9,7 +9,7 @@ import {
 import Board from "./components/Board";
 import PieceTray from "./components/PieceTray";
 import DateSelector from "./components/DateSelector";
-import SolverPanel from "./components/SolverPanel";
+import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import "./App.css";
 
 interface ReducerState {
@@ -76,6 +76,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
 
 export default function App() {
   const pieces = useMemo(() => getPieces(), []);
+  const solverRef = useRef<SolverPanelRef>(null);
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const {
     placedPieces,
@@ -172,6 +173,10 @@ export default function App() {
     }
   }, [placedPieces]);
 
+  const handleSolve = useCallback(() => {
+    solverRef.current?.start();
+  }, []);
+
   const handleMonthChange = useCallback(
     (month: string) => {
       dispatch({ type: "SET_TARGET_MONTH", month });
@@ -202,6 +207,12 @@ export default function App() {
           onRemovePiece={handleRemovePiece}
         />
         <aside className="app-sidebar">
+          <SolverPanel
+            ref={solverRef}
+            targetMonth={targetMonth}
+            targetDay={targetDay}
+            placedPieces={placedPieces}
+          />
           <DateSelector
             month={targetMonth}
             day={targetDay}
@@ -216,11 +227,7 @@ export default function App() {
             onSelectPiece={handleSelectPiece}
             onSetOrientation={handleSetOrientation}
             onRemoveLastPiece={handleRemoveLastPiece}
-          />
-          <SolverPanel
-            targetMonth={targetMonth}
-            targetDay={targetDay}
-            placedPieces={placedPieces}
+            onSolve={handleSolve}
           />
         </aside>
       </main>

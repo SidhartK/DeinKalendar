@@ -11,6 +11,7 @@ interface PieceTrayProps {
   onSelectPiece: (id: number | null) => void;
   onSetOrientation: (index: number) => void;
   onRemoveLastPiece: () => void;
+  onSolve: () => void;
 }
 
 export default function PieceTray({
@@ -21,6 +22,7 @@ export default function PieceTray({
   onSelectPiece,
   onSetOrientation,
   onRemoveLastPiece,
+  onSolve,
 }: PieceTrayProps) {
   const selectedPiece = pieces.find((p) => p.id === selectedPieceId) ?? null;
   const orientationCount = selectedPiece?.orientations.length ?? 0;
@@ -46,17 +48,20 @@ export default function PieceTray({
       } else if (e.key === "e" || e.key === "E") {
         e.preventDefault();
         flip();
-      } else if (e.key === "Escape") {
+      } else if (e.key === "q" || e.key === "Q") {
         e.preventDefault();
         onSelectPiece(null);
       } else if (e.key === "w" || e.key === "W") {
         e.preventDefault();
         onRemoveLastPiece();
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        onSolve();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [rotateForward, flip, onSelectPiece, onRemoveLastPiece]);
+  }, [rotateForward, flip, onSelectPiece, onRemoveLastPiece, onSolve]);
 
   const unplacedPieces = pieces.filter((p) => !placedPieceIds.has(p.id));
 
@@ -87,7 +92,7 @@ export default function PieceTray({
           <button
             className="control-btn deselect-btn"
             onClick={() => onSelectPiece(null)}
-            title="Deselect (Esc)"
+            title="Deselect (Q)"
           >
             Deselect
           </button>
