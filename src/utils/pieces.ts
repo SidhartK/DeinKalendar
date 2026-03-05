@@ -29,11 +29,7 @@ function flipHorizontal(cells: Coord[]): Coord[] {
   return cells.map(([r, c]) => [r, -c]);
 }
 
-function coordsKey(cells: Coord[]): string {
-  return cells.map(([r, c]) => `${r},${c}`).join("|");
-}
-
-function cellsToAscii(cells: Coord[]): string {
+export function cellsToAscii(cells: Coord[]): string {
   if (cells.length === 0) return "";
 
   const norm = normalize(cells);
@@ -54,21 +50,14 @@ function cellsToAscii(cells: Coord[]): string {
 }
 
 function generateOrientations(cells: Coord[]): Orientation[] {
-  const seen = new Set<string>();
   const orientations: Orientation[] = [];
-
   const variants = [cells, flipHorizontal(cells)];
 
   for (const base of variants) {
     let current = base;
     for (let rot = 0; rot < 4; rot++) {
-      const norm = normalize(current);
-      const key = coordsKey(norm);
-      if (!seen.has(key)) {
-        seen.add(key);
-        orientations.push({ cells: norm });
-        console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(norm)}\n`);
-      }
+      console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(normalize(current))}\n`);
+      orientations.push({ cells: normalize(current) });
       current = rotate90(current);
     }
   }
@@ -94,33 +83,6 @@ export function getPieces(): PieceDefinition[] {
     _cached = loadPieces();
   }
   return _cached;
-}
-
-const flipIndexCache = new Map<number, number[]>();
-
-export function getVerticalFlipIndex(
-  piece: PieceDefinition,
-  index: number
-): number {
-  let mapping = flipIndexCache.get(piece.id);
-  if (!mapping) {
-    const keyToIndex = new Map<string, number>();
-    piece.orientations.forEach((o, i) => {
-      keyToIndex.set(coordsKey(normalize(o.cells)), i);
-    });
-
-    mapping = piece.orientations.map((o, i) => {
-      const flippedCells = normalize(flipHorizontal(o.cells));
-      const key = coordsKey(flippedCells);
-      const target = keyToIndex.get(key);
-      return target == null ? i : target;
-    });
-
-    flipIndexCache.set(piece.id, mapping);
-  }
-
-  if (index < 0 || index >= mapping.length) return index;
-  return mapping[index];
 }
 
 export function getPieceById(id: number): PieceDefinition | undefined {

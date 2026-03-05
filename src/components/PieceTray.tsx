@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from "react";
 import { PieceDefinition, PIECE_COLORS } from "../types";
-import { getVerticalFlipIndex } from "../utils/pieces";
 import PiecePreview from "./PiecePreview";
 import "./PieceTray.css";
 
@@ -26,14 +25,13 @@ export default function PieceTray({
 
   const rotateForward = useCallback(() => {
     if (!selectedPiece) return;
-    onSetOrientation((selectedOrientation + 1) % orientationCount);
-  }, [selectedPiece, selectedOrientation, orientationCount, onSetOrientation]);
+    const next = (selectedOrientation % 4 + 1) % 4 + Math.floor(selectedOrientation / 4) * 4;
+    onSetOrientation(next);
+  }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
   const flip = useCallback(() => {
     if (!selectedPiece) return;
-    const nextIndex = getVerticalFlipIndex(selectedPiece, selectedOrientation);
-    if (nextIndex === selectedOrientation) return;
-    onSetOrientation(nextIndex);
+    onSetOrientation((selectedOrientation + 4) % 8);
   }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
   useEffect(() => {
