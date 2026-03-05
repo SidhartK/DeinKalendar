@@ -25,6 +25,10 @@ function rotate90(cells: Coord[]): Coord[] {
   return cells.map(([r, c]) => [c, -r]);
 }
 
+function rotate270(cells: Coord[]): Coord[] {
+  return cells.map(([r, c]) => [-c, r]);
+}
+
 function flipHorizontal(cells: Coord[]): Coord[] {
   return cells.map(([r, c]) => [r, -c]);
 }
@@ -51,15 +55,19 @@ export function cellsToAscii(cells: Coord[]): string {
 
 function generateOrientations(cells: Coord[]): Orientation[] {
   const orientations: Orientation[] = [];
-  const variants = [cells, flipHorizontal(cells)];
 
-  for (const base of variants) {
-    let current = base;
-    for (let rot = 0; rot < 4; rot++) {
-      console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(normalize(current))}\n`);
-      orientations.push({ cells: normalize(current) });
-      current = rotate90(current);
-    }
+  let current = cells;
+  for (let rot = 0; rot < 4; rot++) {
+    console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(normalize(current))}\n`);
+    orientations.push({ cells: normalize(current) });
+    current = rotate90(current);
+  }
+
+  current = flipHorizontal(cells);
+  for (let rot = 0; rot < 4; rot++) {
+    console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(normalize(current))}\n`);
+    orientations.push({ cells: normalize(current) });
+    current = rotate270(current);
   }
 
   return orientations;

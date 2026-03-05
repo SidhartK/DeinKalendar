@@ -25,7 +25,8 @@ export default function PieceTray({
 
   const rotateForward = useCallback(() => {
     if (!selectedPiece) return;
-    const next = (selectedOrientation % 4 + 1) % 4 + Math.floor(selectedOrientation / 4) * 4;
+    const flipped = selectedOrientation >= 4;
+    const next = (selectedOrientation % 4 + (flipped ? -1 : 1)) % 4 + (flipped ? 4 : 0);
     onSetOrientation(next);
   }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
