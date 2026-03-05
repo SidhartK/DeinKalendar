@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   CellValue,
   Coord,
@@ -98,6 +98,20 @@ export default function Board({
   const handleMouseLeave = useCallback(() => {
     setHoverCell(null);
   }, []);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (e.key === " ") {
+        e.preventDefault();
+        if (selectedPiece && preview?.valid) {
+          onPlacePiece(preview.anchorRow, preview.anchorCol);
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedPiece, preview, onPlacePiece]);
 
   return (
     <div className="board" onMouseLeave={handleMouseLeave}>
