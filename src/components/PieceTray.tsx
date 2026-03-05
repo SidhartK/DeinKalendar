@@ -54,7 +54,7 @@ export default function PieceTray({
       } else if (e.key === "w" || e.key === "W") {
         e.preventDefault();
         onRemoveLastPiece();
-      } else if (e.key === "f" || e.key === "F") {
+      } else if (e.key === "s" || e.key === "S") {
         e.preventDefault();
         onSolve();
       }
