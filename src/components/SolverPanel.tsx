@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import type { PlacedPiece } from "../types";
 import {

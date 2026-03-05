@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useCallback } from "react";
 import { PieceDefinition, PIECE_COLORS } from "../types";
 import PiecePreview from "./PiecePreview";

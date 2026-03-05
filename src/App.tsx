@@ -1,3 +1,5 @@
+"use client";
+
 import { useReducer, useMemo, useCallback, useRef } from "react";
 import { PlacedPiece, GameAction } from "./types";
 import { createEmptyGrid } from "./utils/board";

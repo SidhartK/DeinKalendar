@@ -1,3 +1,5 @@
+"use client";
+
 import { MONTHS } from "../types";
 import "./DateSelector.css";
 

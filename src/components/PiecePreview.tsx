@@ -1,3 +1,5 @@
+"use client";
+
 import { Orientation, PIECE_COLORS } from "../types";
 import "./PieceTray.css";
 

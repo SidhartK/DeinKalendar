@@ -1,5 +1,5 @@
 import { Coord, PieceDefinition, Orientation } from "../types";
-import pieceData from "../../state_pieces.json";
+import pieceData from "../data/state_pieces.json";
 
 function parseShape(shape: string[]): Coord[] {
   const cells: Coord[] = [];
@@ -88,14 +88,12 @@ function generateOrientations(cells: Coord[]): Orientation[] {
 
   let current = cells;
   for (let rot = 0; rot < 4; rot++) {
-    console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(normalize(current))}\n`);
     orientations.push({ cells: normalize(current) });
     current = rotate90(current);
   }
 
   current = flipHorizontal(cells);
   for (let rot = 0; rot < 4; rot++) {
-    console.log(`Generated orientation #${orientations.length}:\n${cellsToAscii(normalize(current))}\n`);
     orientations.push({ cells: normalize(current) });
     current = rotate270(current);
   }
