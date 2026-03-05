@@ -5,6 +5,7 @@ interface PiecePreviewProps {
   pieceId: number;
   orientation: Orientation;
   isSelected?: boolean;
+  isPlaced?: boolean;
   onClick?: () => void;
 }
 
@@ -12,6 +13,7 @@ export default function PiecePreview({
   pieceId,
   orientation,
   isSelected,
+  isPlaced,
   onClick,
 }: PiecePreviewProps) {
   const cells = orientation.cells;
@@ -22,8 +24,8 @@ export default function PiecePreview({
 
   return (
     <div
-      className={`piece-preview ${isSelected ? "selected" : ""}`}
-      onClick={onClick}
+      className={`piece-preview ${isSelected ? "selected" : ""} ${isPlaced ? "placed" : ""}`}
+      onClick={isPlaced ? undefined : onClick}
       style={isSelected ? { borderColor: color } : undefined}
     >
       <div className="piece-mini-grid">

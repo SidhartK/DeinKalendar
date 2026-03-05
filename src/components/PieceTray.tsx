@@ -63,8 +63,6 @@ export default function PieceTray({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [rotateForward, flip, onSelectPiece, onRemoveLastPiece, onSolve]);
 
-  const unplacedPieces = pieces.filter((p) => !placedPieceIds.has(p.id));
-
   return (
     <div className="piece-tray">
       <h3 className="tray-title">Pieces</h3>
@@ -100,27 +98,33 @@ export default function PieceTray({
       )}
 
       <div className="piece-grid">
-        {unplacedPieces.map((piece) => (
-          <div key={piece.id} className="piece-slot">
-            <PiecePreview
-              pieceId={piece.id}
-              orientation={piece.orientations[0]}
-              isSelected={piece.id === selectedPieceId}
-              onClick={() =>
-                onSelectPiece(piece.id === selectedPieceId ? null : piece.id)
-              }
-            />
-            <span
-              className="piece-name"
-              style={{ color: PIECE_COLORS[piece.id] ?? "#888" }}
-            >
-              {piece.name}
-            </span>
-          </div>
-        ))}
-        {unplacedPieces.length === 0 && (
-          <p className="all-placed">All pieces placed!</p>
-        )}
+        {pieces.map((piece) => {
+          const isPlaced = placedPieceIds.has(piece.id);
+          return (
+            <div key={piece.id} className="piece-slot">
+              <PiecePreview
+                pieceId={piece.id}
+                orientation={piece.orientations[0]}
+                isSelected={piece.id === selectedPieceId}
+                isPlaced={isPlaced}
+                onClick={
+                  isPlaced
+                    ? undefined
+                    : () =>
+                        onSelectPiece(
+                          piece.id === selectedPieceId ? null : piece.id
+                        )
+                }
+              />
+              <span
+                className={`piece-name ${isPlaced ? "placed" : ""}`}
+                style={{ color: PIECE_COLORS[piece.id] ?? "#888" }}
+              >
+                {piece.name}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

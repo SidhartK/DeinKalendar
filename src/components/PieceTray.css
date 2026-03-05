@@ -69,22 +69,28 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Grid of unplaced pieces */
+/* Grid of pieces: 2 columns × 4 rows */
 .piece-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .piece-slot {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .piece-name {
   font-size: 13px;
   font-weight: 600;
+}
+
+.piece-name.placed {
+  opacity: 0.5;
+  color: #888 !important;
 }
 
 .all-placed {
@@ -113,6 +119,17 @@
 .piece-preview.selected {
   border-width: 2px;
   background: rgba(255, 255, 255, 0.08);
+}
+
+.piece-preview.placed {
+  opacity: 0.4;
+  filter: grayscale(0.8);
+  cursor: default;
+  pointer-events: none;
+}
+
+.piece-preview.placed .piece-mini-cell.filled {
+  background-color: #666 !important;
 }
 
 .piece-mini-grid {
