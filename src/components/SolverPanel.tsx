@@ -1,6 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { PlacedPiece } from "../types";
-import { getPieces } from "../utils/pieces";
+import {
+  getPieces,
+  getUniqueOrientations,
+  getSolverOrientationIndex,
+} from "../utils/pieces";
 import "./SolverPanel.css";
 
 interface SolverPanelProps {
@@ -89,19 +93,22 @@ export default function SolverPanel({
     };
 
     const pieces = getPieces();
-    const initialPlacements = placedPieces.map((pp) => ({
-      pieceId: pp.pieceId,
-      row: pp.row,
-      col: pp.col,
-      orientationIndex: pp.orientationIndex,
-    }));
+    const initialPlacements = placedPieces.map((pp) => {
+      const piece = pieces.find((p) => p.id === pp.pieceId)!;
+      return {
+        pieceId: pp.pieceId,
+        row: pp.row,
+        col: pp.col,
+        orientationIndex: getSolverOrientationIndex(piece, pp.orientationIndex),
+      };
+    });
     worker.postMessage({
       type: "start",
       targetMonth,
       targetDay,
       pieces: pieces.map((p) => ({
         id: p.id,
-        orientations: p.orientations.map((o) => ({ cells: o.cells })),
+        orientations: getUniqueOrientations(p).map((o) => ({ cells: o.cells })),
       })),
       initialPlacements,
     });

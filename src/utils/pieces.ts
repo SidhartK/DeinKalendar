@@ -33,6 +33,36 @@ function flipHorizontal(cells: Coord[]): Coord[] {
   return cells.map(([r, c]) => [r, -c]);
 }
 
+function coordsKey(cells: Coord[]): string {
+  const norm = normalize(cells);
+  return norm.map(([r, c]) => `${r},${c}`).join("|");
+}
+
+export function getUniqueOrientations(piece: PieceDefinition): Orientation[] {
+  const seen = new Set<string>();
+  const result: Orientation[] = [];
+  for (const o of piece.orientations) {
+    const key = coordsKey(o.cells);
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(o);
+    }
+  }
+  return result;
+}
+
+export function getSolverOrientationIndex(
+  piece: PieceDefinition,
+  uiOrientationIndex: number
+): number {
+  const unique = getUniqueOrientations(piece);
+  const keyToIndex = new Map<string, number>();
+  unique.forEach((o, i) => keyToIndex.set(coordsKey(o.cells), i));
+  const target = piece.orientations[uiOrientationIndex];
+  if (!target) return 0;
+  return keyToIndex.get(coordsKey(target.cells)) ?? 0;
+}
+
 export function cellsToAscii(cells: Coord[]): string {
   if (cells.length === 0) return "";
 
