@@ -54,7 +54,9 @@ export type GameAction =
   | { type: "SELECT_PIECE"; pieceId: number | null }
   | { type: "SET_ORIENTATION"; index: number }
   | { type: "PLACE_PIECE"; piece: PlacedPiece }
-  | { type: "REMOVE_PIECE"; pieceId: number };
+  | { type: "REMOVE_PIECE"; pieceId: number }
+  | { type: "REMOVE_LAST_PIECE" }
+  | { type: "RESTORE_LAST_REMOVED" };
 
 export const PIECE_COLORS: Record<number, string> = {
   1: "#e74c3c",

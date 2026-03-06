@@ -13,6 +13,7 @@ interface PieceTrayProps {
   onSelectPiece: (id: number | null) => void;
   onSetOrientation: (index: number) => void;
   onRemoveLastPiece: () => void;
+  onRestoreLastRemoved: () => void;
   onSolve: () => void;
 }
 
@@ -24,6 +25,7 @@ export default function PieceTray({
   onSelectPiece,
   onSetOrientation,
   onRemoveLastPiece,
+  onRestoreLastRemoved,
   onSolve,
 }: PieceTrayProps) {
   const selectedPiece = pieces.find((p) => p.id === selectedPieceId) ?? null;
@@ -56,6 +58,9 @@ export default function PieceTray({
       } else if (e.key === "w" || e.key === "W") {
         e.preventDefault();
         onRemoveLastPiece();
+      } else if (e.key === "z" || e.key === "Z") {
+        e.preventDefault();
+        onRestoreLastRemoved();
       } else if (e.key === "s" || e.key === "S") {
         e.preventDefault();
         onSolve();
@@ -63,7 +68,7 @@ export default function PieceTray({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [rotateForward, flip, onSelectPiece, onRemoveLastPiece, onSolve]);
+  }, [rotateForward, flip, onSelectPiece, onRemoveLastPiece, onRestoreLastRemoved, onSolve]);
 
   return (
     <div className="piece-tray">

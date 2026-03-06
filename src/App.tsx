@@ -20,6 +20,7 @@ interface ReducerState {
   targetDay: number;
   selectedPieceId: number | null;
   selectedOrientation: number;
+  lastRemovedByW: PlacedPiece | null;
 }
 
 const initialState: ReducerState = {
@@ -28,6 +29,7 @@ const initialState: ReducerState = {
   targetDay: 1,
   selectedPieceId: null,
   selectedOrientation: 0,
+  lastRemovedByW: null,
 };
 
 function gameReducer(state: ReducerState, action: GameAction): ReducerState {
@@ -39,6 +41,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [],
         selectedPieceId: null,
         selectedOrientation: 0,
+        lastRemovedByW: null,
       };
     case "SET_TARGET_DAY":
       return {
@@ -47,6 +50,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [],
         selectedPieceId: null,
         selectedOrientation: 0,
+        lastRemovedByW: null,
       };
     case "SELECT_PIECE":
       return {
@@ -65,6 +69,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [...state.placedPieces, action.piece],
         selectedPieceId: null,
         selectedOrientation: 0,
+        lastRemovedByW: null,
       };
     case "REMOVE_PIECE":
       return {
@@ -73,6 +78,25 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
           (pp) => pp.pieceId !== action.pieceId
         ),
       };
+    case "REMOVE_LAST_PIECE": {
+      if (state.placedPieces.length === 0) return state;
+      const last = state.placedPieces[state.placedPieces.length - 1];
+      return {
+        ...state,
+        placedPieces: state.placedPieces.slice(0, -1),
+        selectedPieceId: null,
+        selectedOrientation: 0,
+        lastRemovedByW: last,
+      };
+    }
+    case "RESTORE_LAST_REMOVED": {
+      if (!state.lastRemovedByW) return state;
+      return {
+        ...state,
+        placedPieces: [...state.placedPieces, state.lastRemovedByW],
+        lastRemovedByW: null,
+      };
+    }
   }
 }
 
@@ -170,10 +194,15 @@ export default function App() {
 
   const handleRemoveLastPiece = useCallback(() => {
     if (placedPieces.length > 0) {
-      const last = placedPieces[placedPieces.length - 1];
-      dispatch({ type: "REMOVE_PIECE", pieceId: last.pieceId });
+      dispatch({ type: "REMOVE_LAST_PIECE" });
     }
   }, [placedPieces]);
+
+  const handleRestoreLastRemoved = useCallback(() => {
+    if (state.lastRemovedByW) {
+      dispatch({ type: "RESTORE_LAST_REMOVED" });
+    }
+  }, [state.lastRemovedByW]);
 
   const handleSolve = useCallback(() => {
     solverRef.current?.start();
@@ -229,6 +258,7 @@ export default function App() {
             onSelectPiece={handleSelectPiece}
             onSetOrientation={handleSetOrientation}
             onRemoveLastPiece={handleRemoveLastPiece}
+            onRestoreLastRemoved={handleRestoreLastRemoved}
             onSolve={handleSolve}
           />
         </aside>
