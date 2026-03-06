@@ -55,6 +55,7 @@ export type GameAction =
   | { type: "SET_ORIENTATION"; index: number }
   | { type: "PLACE_PIECE"; piece: PlacedPiece }
   | { type: "REMOVE_PIECE"; pieceId: number }
+  | { type: "PICK_UP_PIECE"; pieceId: number }
   | { type: "REMOVE_LAST_PIECE" }
   | { type: "RESTORE_LAST_REMOVED" };
 

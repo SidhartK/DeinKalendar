@@ -21,7 +21,7 @@ interface BoardProps {
   selectedPiece: PieceDefinition | null;
   selectedOrientation: number;
   onPlacePiece: (row: number, col: number) => void;
-  onRemovePiece: (pieceId: number) => void;
+  onPickUpPiece: (pieceId: number) => void;
 }
 
 export default function Board({
@@ -31,7 +31,7 @@ export default function Board({
   selectedPiece,
   selectedOrientation,
   onPlacePiece,
-  onRemovePiece,
+  onPickUpPiece,
 }: BoardProps) {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
 
@@ -82,7 +82,7 @@ export default function Board({
       const cellValue = grid[row]?.[col];
 
       if (typeof cellValue === "number") {
-        onRemovePiece(cellValue);
+        onPickUpPiece(cellValue);
         return;
       }
 
@@ -90,7 +90,7 @@ export default function Board({
         onPlacePiece(preview.anchorRow, preview.anchorCol);
       }
     },
-    [grid, selectedPiece, preview, onPlacePiece, onRemovePiece]
+    [grid, selectedPiece, preview, onPlacePiece, onPickUpPiece]
   );
 
   const handleMouseEnter = useCallback((row: number, col: number) => {

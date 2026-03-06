@@ -78,6 +78,20 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
           (pp) => pp.pieceId !== action.pieceId
         ),
       };
+    case "PICK_UP_PIECE": {
+      const placed = state.placedPieces.find(
+        (pp) => pp.pieceId === action.pieceId
+      );
+      if (!placed) return state;
+      return {
+        ...state,
+        placedPieces: state.placedPieces.filter(
+          (pp) => pp.pieceId !== action.pieceId
+        ),
+        selectedPieceId: action.pieceId,
+        selectedOrientation: placed.orientationIndex,
+      };
+    }
     case "REMOVE_LAST_PIECE": {
       if (state.placedPieces.length === 0) return state;
       const last = state.placedPieces[state.placedPieces.length - 1];
@@ -193,6 +207,10 @@ export default function App() {
     []
   );
 
+  const handlePickUpPiece = useCallback((pieceId: number) => {
+    dispatch({ type: "PICK_UP_PIECE", pieceId });
+  }, []);
+
   const handleRemoveLastPiece = useCallback(() => {
     if (placedPieces.length > 0) {
       dispatch({ type: "REMOVE_LAST_PIECE" });
@@ -236,7 +254,7 @@ export default function App() {
           selectedPiece={selectedPiece ?? null}
           selectedOrientation={selectedOrientation}
           onPlacePiece={handlePlacePiece}
-          onRemovePiece={handleRemovePiece}
+          onPickUpPiece={handlePickUpPiece}
         />
         <aside className="app-sidebar">
           <SolverPanel
