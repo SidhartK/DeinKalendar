@@ -27,7 +27,7 @@
   user-select: none;
 }
 
-.board-cell:hover:not(.blocked) {
+.board-cell:hover:not(.blocked):not(.target) {
   transform: scale(1.04);
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
 }
@@ -47,7 +47,7 @@
   cursor: pointer;
 }
 
-.board-cell.occupied:hover {
+.board-cell.occupied:hover:not(.target) {
   filter: brightness(1.2);
 }
 
