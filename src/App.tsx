@@ -20,7 +20,7 @@ interface ReducerState {
   targetDay: number;
   selectedPieceId: number | null;
   selectedOrientation: number;
-  lastRemovedByW: PlacedPiece | null;
+  removedByWStack: PlacedPiece[];
 }
 
 const initialState: ReducerState = {
@@ -29,7 +29,7 @@ const initialState: ReducerState = {
   targetDay: 1,
   selectedPieceId: null,
   selectedOrientation: 0,
-  lastRemovedByW: null,
+  removedByWStack: [],
 };
 
 function gameReducer(state: ReducerState, action: GameAction): ReducerState {
@@ -41,7 +41,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [],
         selectedPieceId: null,
         selectedOrientation: 0,
-        lastRemovedByW: null,
+        removedByWStack: [],
       };
     case "SET_TARGET_DAY":
       return {
@@ -50,7 +50,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [],
         selectedPieceId: null,
         selectedOrientation: 0,
-        lastRemovedByW: null,
+        removedByWStack: [],
       };
     case "SELECT_PIECE":
       return {
@@ -69,7 +69,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [...state.placedPieces, action.piece],
         selectedPieceId: null,
         selectedOrientation: 0,
-        lastRemovedByW: null,
+        removedByWStack: [],
       };
     case "REMOVE_PIECE":
       return {
@@ -86,15 +86,16 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: state.placedPieces.slice(0, -1),
         selectedPieceId: null,
         selectedOrientation: 0,
-        lastRemovedByW: last,
+        removedByWStack: [...state.removedByWStack, last],
       };
     }
     case "RESTORE_LAST_REMOVED": {
-      if (!state.lastRemovedByW) return state;
+      if (state.removedByWStack.length === 0) return state;
+      const piece = state.removedByWStack[state.removedByWStack.length - 1];
       return {
         ...state,
-        placedPieces: [...state.placedPieces, state.lastRemovedByW],
-        lastRemovedByW: null,
+        placedPieces: [...state.placedPieces, piece],
+        removedByWStack: state.removedByWStack.slice(0, -1),
       };
     }
   }
@@ -199,10 +200,10 @@ export default function App() {
   }, [placedPieces]);
 
   const handleRestoreLastRemoved = useCallback(() => {
-    if (state.lastRemovedByW) {
+    if (state.removedByWStack.length > 0) {
       dispatch({ type: "RESTORE_LAST_REMOVED" });
     }
-  }, [state.lastRemovedByW]);
+  }, [state.removedByWStack.length]);
 
   const handleSolve = useCallback(() => {
     solverRef.current?.start();
