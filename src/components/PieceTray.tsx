@@ -34,7 +34,10 @@ export default function PieceTray({
   const rotateForward = useCallback(() => {
     if (!selectedPiece) return;
     const flipped = selectedOrientation >= 4;
-    const next = (selectedOrientation % 4 + (flipped ? -1 : 1)) % 4 + (flipped ? 4 : 0);
+    // Use ((n % m) + m) % m to ensure positive modulo results
+    const posMod = (n: number, m: number) => ((n % m) + m) % m;
+    const next = posMod((selectedOrientation % 4 + (flipped ? -1 : 1)), 4) + (flipped ? 4 : 0);
+    console.log("rotateForward", selectedOrientation, flipped, (selectedOrientation % 4 + (flipped ? -1 : 1)) % 4, next);
     onSetOrientation(next);
   }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
