@@ -46,7 +46,14 @@ export default function PieceTray({
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
-      if (e.key === "r" || e.key === "R") {
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= 8) {
+        const piece = pieces.find((p) => p.id === num);
+        if (piece && !placedPieceIds.has(piece.id)) {
+          e.preventDefault();
+          onSelectPiece(piece.id === selectedPieceId ? null : piece.id);
+        }
+      } else if (e.key === "r" || e.key === "R") {
         e.preventDefault();
         rotateForward();
       } else if (e.key === "e" || e.key === "E") {
@@ -68,7 +75,7 @@ export default function PieceTray({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [rotateForward, flip, onSelectPiece, onRemoveLastPiece, onRestoreLastRemoved, onSolve]);
+  }, [pieces, placedPieceIds, selectedPieceId, rotateForward, flip, onSelectPiece, onRemoveLastPiece, onRestoreLastRemoved, onSolve]);
 
   return (
     <div className="piece-tray">
