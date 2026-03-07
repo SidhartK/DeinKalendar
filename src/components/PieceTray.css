@@ -69,10 +69,11 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Grid of pieces: 2 columns × 4 rows */
+/* Grid of pieces: 2 rows × 4 pieces per row */
 .piece-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, auto);
   gap: 10px;
 }
 
@@ -154,6 +155,7 @@
   box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.3);
 }
 
+/* Mobile: 2 rows × 4 pieces with smaller piece visuals */
 @media (max-width: 640px) {
   .piece-tray {
     min-width: 0;
@@ -162,16 +164,33 @@
   }
 
   .piece-grid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(4, auto);
+    gap: 8px;
+  }
+
+  .piece-slot {
+    gap: 4px;
   }
 
   .piece-mini-cell {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+
+  .piece-mini-grid {
+    gap: 1px;
+  }
+
+  .piece-mini-row {
+    gap: 1px;
   }
 
   .piece-preview {
-    padding: 4px;
+    padding: 3px;
+    border-radius: 6px;
+  }
+
+  .piece-name {
+    font-size: 11px;
   }
 }
