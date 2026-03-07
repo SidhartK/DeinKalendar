@@ -6,6 +6,7 @@
   background: #1a1a2e;
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  max-width: 100%;
 }
 
 .board-row {
@@ -14,8 +15,8 @@
 }
 
 .board-cell {
-  width: 64px;
-  height: 64px;
+  width: min(64px, calc((100vw - 90px) / 7));
+  height: min(64px, calc((100vw - 90px) / 7));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -76,4 +77,10 @@
 .board-cell.target .cell-label {
   color: #f1c40f;
   font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .cell-label {
+    font-size: clamp(10px, 2.5vw, 13px);
+  }
 }
