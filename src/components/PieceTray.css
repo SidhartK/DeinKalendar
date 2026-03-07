@@ -94,6 +94,23 @@
   color: #888 !important;
 }
 
+.slot-flip-btn {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: #0f3460;
+  color: #e0e0e0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.slot-flip-btn:hover {
+  background: #1a5276;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 .all-placed {
   color: #2ecc71;
   font-size: 14px;
@@ -192,5 +209,10 @@
 
   .piece-name {
     font-size: 11px;
+  }
+
+  .slot-flip-btn {
+    padding: 3px 8px;
+    font-size: 10px;
   }
 }

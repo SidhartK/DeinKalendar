@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { PieceDefinition, PIECE_COLORS } from "../types";
+import { rotateOrientation90CW, flipOrientationIndex } from "../utils/pieces";
 import PiecePreview from "./PiecePreview";
 import "./PieceTray.css";
 
@@ -33,17 +34,12 @@ export default function PieceTray({
 
   const rotateForward = useCallback(() => {
     if (!selectedPiece) return;
-    const flipped = selectedOrientation >= 4;
-    // Use ((n % m) + m) % m to ensure positive modulo results
-    const posMod = (n: number, m: number) => ((n % m) + m) % m;
-    const next = posMod((selectedOrientation % 4 + (flipped ? -1 : 1)), 4) + (flipped ? 4 : 0);
-    console.log("rotateForward", selectedOrientation, flipped, (selectedOrientation % 4 + (flipped ? -1 : 1)) % 4, next);
-    onSetOrientation(next);
+    onSetOrientation(rotateOrientation90CW(selectedOrientation));
   }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
   const flip = useCallback(() => {
     if (!selectedPiece) return;
-    onSetOrientation((selectedOrientation + 4) % 8);
+    onSetOrientation(flipOrientationIndex(selectedOrientation));
   }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
   useEffect(() => {
@@ -127,10 +123,13 @@ export default function PieceTray({
                 onClick={
                   isPlaced
                     ? undefined
-                    : () =>
-                        onSelectPiece(
-                          piece.id === selectedPieceId ? null : piece.id
-                        )
+                    : () => {
+                        if (piece.id === selectedPieceId) {
+                          rotateForward();
+                        } else {
+                          onSelectPiece(piece.id);
+                        }
+                      }
                 }
               />
               <span
@@ -139,6 +138,23 @@ export default function PieceTray({
               >
                 {piece.name}
               </span>
+              {!isPlaced && (
+                <button
+                  type="button"
+                  className="slot-flip-btn"
+                  onClick={() => {
+                    if (piece.id === selectedPieceId) {
+                      flip();
+                    } else {
+                      onSelectPiece(piece.id);
+                      onSetOrientation(flipOrientationIndex(0));
+                    }
+                  }}
+                  title="Flip"
+                >
+                  ↔ Flip
+                </button>
+              )}
             </div>
           );
         })}

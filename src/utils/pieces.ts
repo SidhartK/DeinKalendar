@@ -38,6 +38,17 @@ function coordsKey(cells: Coord[]): string {
   return norm.map(([r, c]) => `${r},${c}`).join("|");
 }
 
+/** Given orientation index 0–7, return the next index after rotating 90° CW. */
+export function rotateOrientation90CW(index: number): number {
+  if (index < 4) return (index + 1) % 4;
+  return ((index - 1) % 4 + 4) % 8;
+}
+
+/** Given orientation index 0–7, return the flipped orientation index. */
+export function flipOrientationIndex(index: number): number {
+  return (index + 4) % 8;
+}
+
 export function getUniqueOrientations(piece: PieceDefinition): Orientation[] {
   const seen = new Set<string>();
   const result: Orientation[] = [];
