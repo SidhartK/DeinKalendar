@@ -30,7 +30,6 @@ export default function PieceTray({
   onSolve,
 }: PieceTrayProps) {
   const selectedPiece = pieces.find((p) => p.id === selectedPieceId) ?? null;
-  const orientationCount = selectedPiece?.orientations.length ?? 0;
 
   const rotateForward = useCallback(() => {
     if (!selectedPiece) return;
@@ -78,37 +77,18 @@ export default function PieceTray({
 
   return (
     <div className="piece-tray">
-      <h3 className="tray-title">Pieces</h3>
-
-      {selectedPiece && (
-        <div className="orientation-controls">
-          <div className="selected-piece-preview">
-            <PiecePreview
-              pieceId={selectedPiece.id}
-              orientation={selectedPiece.orientations[selectedOrientation]}
-              isSelected
-            />
-          </div>
-          <div className="orientation-buttons">
-            <button className="control-btn" onClick={rotateForward} title="Rotate (R)">
-              ↻ Rotate
-            </button>
-            <button className="control-btn" onClick={flip} title="Flip (E)">
-              ↔ Flip
-            </button>
-          </div>
-          <span className="orientation-label">
-            {selectedOrientation + 1} / {orientationCount}
-          </span>
-          <button
-            className="control-btn deselect-btn"
-            onClick={() => onSelectPiece(null)}
-            title="Deselect (Q)"
-          >
-            Deselect
-          </button>
-        </div>
-      )}
+      <div className="tray-header">
+        <h3 className="tray-title">Pieces</h3>
+        <button
+          type="button"
+          className="control-btn deselect-btn"
+          onClick={() => onSelectPiece(null)}
+          title="Deselect (Q)"
+          disabled={!selectedPieceId}
+        >
+          Deselect
+        </button>
+      </div>
 
       <div className="piece-grid">
         {pieces.map((piece) => {
@@ -117,7 +97,11 @@ export default function PieceTray({
             <div key={piece.id} className="piece-slot">
               <PiecePreview
                 pieceId={piece.id}
-                orientation={piece.orientations[0]}
+                orientation={
+                  piece.id === selectedPieceId
+                    ? (piece.orientations[selectedOrientation] ?? piece.orientations[0])
+                    : piece.orientations[0]
+                }
                 isSelected={piece.id === selectedPieceId}
                 isPlaced={isPlaced}
                 onClick={
