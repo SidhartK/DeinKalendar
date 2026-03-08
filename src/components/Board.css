@@ -79,6 +79,27 @@
   font-weight: 700;
 }
 
+/* Larger board on desktop (sized to fit laptop without vertical scroll) */
+@media (min-width: 1024px) {
+  .board {
+    padding: 14px;
+    gap: 3px;
+  }
+
+  .board-row {
+    gap: 3px;
+  }
+
+  .board-cell {
+    width: 66px;
+    height: 66px;
+  }
+
+  .cell-label {
+    font-size: 13px;
+  }
+}
+
 @media (max-width: 640px) {
   .cell-label {
     font-size: clamp(10px, 2.5vw, 13px);
