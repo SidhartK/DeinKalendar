@@ -3,6 +3,8 @@
 import { Orientation, PIECE_COLORS } from "../types";
 import "./PieceTray.css";
 
+const PREVIEW_GRID_SIZE = 4;
+
 interface PiecePreviewProps {
   pieceId: number;
   orientation: Orientation;
@@ -19,8 +21,14 @@ export default function PiecePreview({
   onClick,
 }: PiecePreviewProps) {
   const cells = orientation.cells;
-  const maxR = Math.max(...cells.map(([r]) => r)) + 1;
-  const maxC = Math.max(...cells.map(([, c]) => c)) + 1;
+  const minR = Math.min(...cells.map(([r]) => r));
+  const minC = Math.min(...cells.map(([, c]) => c));
+  const maxR = Math.max(...cells.map(([r]) => r));
+  const maxC = Math.max(...cells.map(([, c]) => c));
+  const rows = maxR - minR + 1;
+  const cols = maxC - minC + 1;
+  const startRow = Math.floor((PREVIEW_GRID_SIZE - rows) / 2);
+  const startCol = Math.floor((PREVIEW_GRID_SIZE - cols) / 2);
   const cellSet = new Set(cells.map(([r, c]) => `${r},${c}`));
   const color = PIECE_COLORS[pieceId] ?? "#888";
 
@@ -30,20 +38,21 @@ export default function PiecePreview({
       onClick={isPlaced ? undefined : onClick}
       style={isSelected ? { borderColor: color } : undefined}
     >
-      <div className="piece-mini-grid">
-        {Array.from({ length: maxR }, (_, r) => (
-          <div className="piece-mini-row" key={r}>
-            {Array.from({ length: maxC }, (_, c) => (
-              <div
-                key={c}
-                className={`piece-mini-cell ${cellSet.has(`${r},${c}`) ? "filled" : ""}`}
-                style={
-                  cellSet.has(`${r},${c}`)
-                    ? { backgroundColor: color }
-                    : undefined
-                }
-              />
-            ))}
+      <div className="piece-mini-grid piece-mini-grid-fixed">
+        {Array.from({ length: PREVIEW_GRID_SIZE }, (_, i) => (
+          <div className="piece-mini-row" key={i}>
+            {Array.from({ length: PREVIEW_GRID_SIZE }, (_, j) => {
+              const r = i + minR - startRow;
+              const c = j + minC - startCol;
+              const filled = cellSet.has(`${r},${c}`);
+              return (
+                <div
+                  key={j}
+                  className={`piece-mini-cell ${filled ? "filled" : ""}`}
+                  style={filled ? { backgroundColor: color } : undefined}
+                />
+              );
+            })}
           </div>
         ))}
       </div>
