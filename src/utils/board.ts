@@ -64,3 +64,21 @@ export function getTargetCells(
   }
   return targets;
 }
+
+/** True if every non-blocked cell is filled with a piece (number). */
+export function isBoardComplete(grid: CellValue[][]): boolean {
+  for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+      // if the cell is one of the date cells then continue
+      const label = getLabelAt(r, c);
+      if (label === null) continue;
+      if (isBlocked(r, c)) continue;
+      const cell = grid[r]?.[c];
+      if (cell === null || cell === "blocked") {
+        console.log("isBoardComplete: false, cell: ", cell, " at ", r, c);
+        return false;
+      }
+    }
+  }
+  return true;
+}

@@ -32,6 +32,93 @@
   gap: 20px;
 }
 
+/* Celebration overlay */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  animation: celebration-fade-in 0.3s ease-out;
+}
+
+@keyframes celebration-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.celebration-card {
+  background: linear-gradient(145deg, #fff 0%, #f8f9fa 100%);
+  border-radius: 16px;
+  padding: 32px 40px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  animation: celebration-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+@keyframes celebration-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.celebration-emoji {
+  display: block;
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.celebration-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 8px;
+  background: linear-gradient(135deg, #e74c3c, #f39c12, #2ecc71);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.celebration-subtitle {
+  font-size: 15px;
+  color: #555;
+  margin: 0 0 20px;
+}
+
+.celebration-dismiss {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.celebration-dismiss:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.celebration-dismiss:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 640px) {
   .app {
     padding: 16px;
@@ -40,5 +127,18 @@
   .app-main {
     flex-direction: column;
     align-items: center;
+  }
+
+  .celebration-card {
+    margin: 16px;
+    padding: 24px 28px;
+  }
+
+  .celebration-emoji {
+    font-size: 44px;
+  }
+
+  .celebration-title {
+    font-size: 22px;
   }
 }
