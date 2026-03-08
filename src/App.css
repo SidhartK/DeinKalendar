@@ -21,15 +21,43 @@
 }
 
 .app-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 320px);
+  grid-template-rows: auto 1fr;
   gap: 28px;
-  align-items: flex-start;
+  align-items: start;
 }
 
-.app-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.app-panel--date {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+}
+
+.app-panel--solver {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+}
+
+.app-panel--board {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.app-panel--pieces {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Equal height: make inner panels fill the first row on desktop only */
+@media (min-width: 641px) {
+  .app-panel--date .date-selector,
+  .app-panel--solver .solver-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 /* Celebration overlay */
@@ -125,8 +153,26 @@
   }
 
   .app-main {
+    display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+    gap: 20px;
+  }
+
+  .app-panel--date {
+    order: 1;
+  }
+
+  .app-panel--solver {
+    order: 2;
+  }
+
+  .app-panel--board {
+    order: 3;
+  }
+
+  .app-panel--pieces {
+    order: 4;
   }
 
   .celebration-card {
