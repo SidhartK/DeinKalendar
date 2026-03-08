@@ -28,10 +28,26 @@
   align-items: start;
 }
 
-.app-panel--date {
+.app-left-column {
   grid-column: 1;
-  grid-row: 1;
-  align-self: stretch;
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-height: 0;
+}
+
+.app-left-column .app-panel--date {
+  flex: 0 0 auto;
+}
+
+.app-left-column .app-panel--board {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .app-panel--solver {
@@ -41,12 +57,15 @@
 }
 
 .app-panel--board {
-  grid-column: 1;
-  grid-row: 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
+}
+
+.app-panel--pieces {
+  grid-column: 2;
+  grid-row: 2;
 }
 
 .board-actions {
@@ -56,14 +75,8 @@
   flex-wrap: wrap;
 }
 
-.app-panel--pieces {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-/* Equal height: make inner panels fill the first row on desktop only */
+/* Solver panel fills its cell height on desktop */
 @media (min-width: 641px) {
-  .app-panel--date .date-selector,
   .app-panel--solver .solver-panel {
     height: 100%;
     display: flex;
@@ -170,7 +183,7 @@
     gap: 20px;
   }
 
-  .app-panel--date {
+  .app-left-column {
     order: 1;
   }
 
@@ -178,12 +191,8 @@
     order: 2;
   }
 
-  .app-panel--board {
-    order: 3;
-  }
-
   .app-panel--pieces {
-    order: 4;
+    order: 3;
   }
 
   .celebration-card {

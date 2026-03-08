@@ -324,23 +324,16 @@ export default function App() {
         <h1>Calendar Puzzle</h1>
       </header>
       <main className="app-main">
-        <div className="app-panel app-panel--date">
-          <DateSelector
-            month={targetMonth}
-            day={targetDay}
-            onMonthChange={handleMonthChange}
-            onDayChange={handleDayChange}
-          />
-        </div>
-        <div className="app-panel app-panel--solver">
-          <SolverPanel
-            ref={solverRef}
-            targetMonth={targetMonth}
-            targetDay={targetDay}
-            placedPieces={placedPieces}
-          />
-        </div>
-        <div className="app-panel app-panel--board">
+        <div className="app-left-column">
+          <div className="app-panel app-panel--date">
+            <DateSelector
+              month={targetMonth}
+              day={targetDay}
+              onMonthChange={handleMonthChange}
+              onDayChange={handleDayChange}
+            />
+          </div>
+          <div className="app-panel app-panel--board">
           <Board
             grid={grid}
             targetMonth={targetMonth}
@@ -368,6 +361,15 @@ export default function App() {
               Undo last removal (W)
             </button>
           </div>
+          </div>
+        </div>
+        <div className="app-panel app-panel--solver">
+          <SolverPanel
+            ref={solverRef}
+            targetMonth={targetMonth}
+            targetDay={targetDay}
+            placedPieces={placedPieces}
+          />
         </div>
         <div className="app-panel app-panel--pieces">
           <PieceTray
