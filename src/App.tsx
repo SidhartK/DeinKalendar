@@ -350,6 +350,24 @@ export default function App() {
             onPlacePiece={handlePlacePiece}
             onPickUpPiece={handlePickUpPiece}
           />
+          <div className="board-actions">
+            <button
+              type="button"
+              className="control-btn remove-last-piece-btn"
+              onClick={handleRemoveLastPiece}
+              disabled={placedPieces.length === 0}
+            >
+              Remove the last piece (Q)
+            </button>
+            <button
+              type="button"
+              className="control-btn undo-removal-btn"
+              onClick={handleRestoreLastRemoved}
+              disabled={state.removedByWStack.length === 0}
+            >
+              Undo last removal (W)
+            </button>
+          </div>
         </div>
         <div className="app-panel app-panel--pieces">
           <PieceTray

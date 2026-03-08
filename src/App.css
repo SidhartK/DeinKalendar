@@ -43,6 +43,17 @@
 .app-panel--board {
   grid-column: 1;
   grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.board-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .app-panel--pieces {
