@@ -6,7 +6,9 @@
   background: #1a1a2e;
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  min-width: 220px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .tray-header {
@@ -15,6 +17,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
+}
+
+.tray-header .control-btn {
+  flex-shrink: 0;
 }
 
 .tray-title {
@@ -67,10 +74,11 @@
 /* Grid of pieces: 2 rows × 4 pieces per row; equal row height so Flip buttons align */
 .piece-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(2, 1fr);
   gap: 10px;
   min-height: 260px;
+  min-width: 0;
 }
 
 .piece-slot {
@@ -79,6 +87,20 @@
   align-items: center;
   gap: 6px;
   min-height: 0;
+  min-width: 0;
+}
+
+/* Scale preview to fit slot so grid doesn't spill on narrow panels */
+.piece-slot .piece-preview {
+  width: 100%;
+  max-width: 72px;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.piece-slot .piece-mini-grid-fixed {
+  width: min(56px, 100%);
+  height: min(56px, 100%);
 }
 
 .piece-name {
