@@ -69,12 +69,13 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Grid of pieces: 2 rows × 4 pieces per row */
+/* Grid of pieces: 2 rows × 4 pieces per row; equal row height so Flip buttons align */
 .piece-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, auto);
+  grid-template-rows: repeat(2, 1fr);
   gap: 10px;
+  min-height: 260px;
 }
 
 .piece-slot {
@@ -82,6 +83,7 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  min-height: 0;
 }
 
 .piece-name {
@@ -95,6 +97,7 @@
 }
 
 .slot-flip-btn {
+  margin-top: auto;
   padding: 4px 10px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
