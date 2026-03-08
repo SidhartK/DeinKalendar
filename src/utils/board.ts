@@ -65,19 +65,21 @@ export function getTargetCells(
   return targets;
 }
 
-/** True if every non-blocked cell is filled with a piece (number). */
-export function isBoardComplete(grid: CellValue[][]): boolean {
+/** True if every non-blocked, non-date cell is filled with a piece (number). Date cells (target month/day) are not required to be covered. */
+export function isBoardComplete(
+  grid: CellValue[][],
+  targetMonth: string,
+  targetDay: number
+): boolean {
+  const dateCells = new Set(
+    getTargetCells(targetMonth, targetDay).map(([r, c]) => `${r},${c}`)
+  );
   for (let r = 0; r < GRID_ROWS; r++) {
     for (let c = 0; c < GRID_COLS; c++) {
-      // if the cell is one of the date cells then continue
-      const label = getLabelAt(r, c);
-      if (label === null) continue;
       if (isBlocked(r, c)) continue;
+      if (dateCells.has(`${r},${c}`)) continue;
       const cell = grid[r]?.[c];
-      if (cell === null || cell === "blocked") {
-        console.log("isBoardComplete: false, cell: ", cell, " at ", r, c);
-        return false;
-      }
+      if (cell === null || cell === "blocked") return false;
     }
   }
   return true;

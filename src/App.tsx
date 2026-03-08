@@ -155,9 +155,9 @@ export default function App() {
     [placedPieces]
   );
 
-  console.log("isBoardComplete: ", isBoardComplete(grid));
   const isPuzzleComplete =
-    placedPieces.length === pieces.length && isBoardComplete(grid);
+    placedPieces.length === pieces.length &&
+    isBoardComplete(grid, targetMonth, targetDay);
 
   const celebratedRef = useRef(false);
   const [showCelebration, setShowCelebration] = useState(false);
