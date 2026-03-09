@@ -324,6 +324,14 @@ export default function App() {
         <h1>Calendar Puzzle</h1>
       </header>
       <main className="app-main">
+        <div className="app-panel app-panel--solver">
+          <SolverPanel
+            ref={solverRef}
+            targetMonth={targetMonth}
+            targetDay={targetDay}
+            placedPieces={placedPieces}
+          />
+        </div>
         <div className="app-left-column">
           <div className="app-panel app-panel--date">
             <DateSelector
@@ -334,42 +342,34 @@ export default function App() {
             />
           </div>
           <div className="app-panel app-panel--board">
-          <Board
-            grid={grid}
-            targetMonth={targetMonth}
-            targetDay={targetDay}
-            selectedPiece={selectedPiece ?? null}
-            selectedOrientation={selectedOrientation}
-            onPlacePiece={handlePlacePiece}
-            onPickUpPiece={handlePickUpPiece}
-          />
-          <div className="board-actions">
-            <button
-              type="button"
-              className="control-btn remove-last-piece-btn"
-              onClick={handleRemoveLastPiece}
-              disabled={placedPieces.length === 0}
-            >
-              Remove the last piece (Q)
-            </button>
-            <button
-              type="button"
-              className="control-btn undo-removal-btn"
-              onClick={handleRestoreLastRemoved}
-              disabled={state.removedByWStack.length === 0}
-            >
-              Undo last removal (W)
-            </button>
+            <Board
+              grid={grid}
+              targetMonth={targetMonth}
+              targetDay={targetDay}
+              selectedPiece={selectedPiece ?? null}
+              selectedOrientation={selectedOrientation}
+              onPlacePiece={handlePlacePiece}
+              onPickUpPiece={handlePickUpPiece}
+            />
+            <div className="board-actions">
+              <button
+                type="button"
+                className="control-btn remove-last-piece-btn"
+                onClick={handleRemoveLastPiece}
+                disabled={placedPieces.length === 0}
+              >
+                Remove the last piece (Q)
+              </button>
+              <button
+                type="button"
+                className="control-btn undo-removal-btn"
+                onClick={handleRestoreLastRemoved}
+                disabled={state.removedByWStack.length === 0}
+              >
+                Undo last removal (W)
+              </button>
+            </div>
           </div>
-          </div>
-        </div>
-        <div className="app-panel app-panel--solver">
-          <SolverPanel
-            ref={solverRef}
-            targetMonth={targetMonth}
-            targetDay={targetDay}
-            placedPieces={placedPieces}
-          />
         </div>
         <div className="app-panel app-panel--pieces">
           <PieceTray

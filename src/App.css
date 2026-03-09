@@ -183,11 +183,11 @@
     gap: 20px;
   }
 
-  .app-left-column {
+  .app-panel--solver {
     order: 1;
   }
 
-  .app-panel--solver {
+  .app-left-column {
     order: 2;
   }
 

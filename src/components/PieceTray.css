@@ -90,19 +90,6 @@
   min-width: 0;
 }
 
-/* Scale preview to fit slot so grid doesn't spill on narrow panels */
-.piece-slot .piece-preview {
-  width: 100%;
-  max-width: 72px;
-  height: auto;
-  aspect-ratio: 1;
-}
-
-.piece-slot .piece-mini-grid-fixed {
-  width: min(56px, 100%);
-  height: min(56px, 100%);
-}
-
 .piece-name {
   font-size: 13px;
   font-weight: 600;
@@ -144,8 +131,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   padding: 6px;
   border: 2px solid transparent;
   border-radius: 8px;
@@ -184,8 +171,8 @@
 
 /* Fixed 4×4 grid so the preview is always a square regardless of orientation */
 .piece-mini-grid-fixed {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
 }
 
