@@ -54,48 +54,53 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
   useEffect(() => cleanup, [cleanup]);
 
   useEffect(() => {
-    cleanup();
+    if (workerRef.current) {
+      workerRef.current.postMessage({ type: "stop" });
+    }
     setStatus("idle");
     setSolutionCount(0);
     setElapsed(0);
-  }, [targetMonth, targetDay, placedPieces, cleanup]);
+  }, [targetMonth, targetDay, placedPieces]);
 
   const handleStart = useCallback(() => {
-    cleanup();
     setStatus("solving");
     setSolutionCount(0);
     setElapsed(0);
 
-    const worker = new Worker(
-      new URL("../worker/solver.worker.ts", import.meta.url),
-      { type: "module" }
-    );
-    workerRef.current = worker;
+    let worker = workerRef.current;
+    if (!worker) {
+      worker = new Worker(
+        new URL("../worker/solver.worker.ts", import.meta.url),
+        { type: "module" }
+      );
+      workerRef.current = worker;
+
+      worker.onmessage = (e) => {
+        const msg = e.data;
+        if (msg.type === "progress") {
+          setSolutionCount(msg.count);
+        } else if (msg.type === "done") {
+          setSolutionCount(msg.totalCount);
+          setStatus("done");
+          setElapsed(performance.now() - startTimeRef.current);
+          if (timerRef.current !== null) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+        }
+      };
+
+      worker.onerror = () => {
+        setStatus("done");
+        cleanup();
+      };
+    }
+
     startTimeRef.current = performance.now();
 
     timerRef.current = window.setInterval(() => {
       setElapsed(performance.now() - startTimeRef.current);
     }, 100);
-
-    worker.onmessage = (e) => {
-      const msg = e.data;
-      if (msg.type === "progress") {
-        setSolutionCount(msg.count);
-      } else if (msg.type === "done") {
-        setSolutionCount(msg.totalCount);
-        setStatus("done");
-        setElapsed(performance.now() - startTimeRef.current);
-        if (timerRef.current !== null) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-      }
-    };
-
-    worker.onerror = () => {
-      setStatus("done");
-      cleanup();
-    };
 
     const pieces = getPieces();
     const initialPlacements = placedPieces.map((pp) => {
@@ -124,9 +129,15 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
   }), [handleStart]);
 
   const handleStop = useCallback(() => {
-    cleanup();
+    if (workerRef.current) {
+      workerRef.current.postMessage({ type: "stop" });
+    }
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     setStatus("done");
-  }, [cleanup]);
+  }, []);
 
   return (
     <div className="solver-panel">

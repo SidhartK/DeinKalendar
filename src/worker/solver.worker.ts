@@ -54,6 +54,9 @@ interface InitialPlacement {
   orientationIndex: number;
 }
 
+type StateCache = Map<string, number>;
+const globalCache = new Map<string, StateCache>();
+
 function sendMessage(msg: unknown): void {
   (self as unknown as { postMessage(m: unknown): void }).postMessage(msg);
 }
@@ -80,7 +83,31 @@ self.addEventListener("message", (e: MessageEvent) => {
     )
       ? msg.initialPlacements
       : [];
-    runSolver(msg.targetMonth, msg.targetDay, pieces, initialPlacements);
+
+    const puzzleKeyParts: string[] = [];
+    puzzleKeyParts.push(String(msg.targetMonth));
+    puzzleKeyParts.push(String(msg.targetDay));
+    const sortedPlacements = [...initialPlacements].sort((a, b) => {
+      if (a.pieceId !== b.pieceId) return a.pieceId - b.pieceId;
+      if (a.row !== b.row) return a.row - b.row;
+      if (a.col !== b.col) return a.col - b.col;
+      return a.orientationIndex - b.orientationIndex;
+    });
+    const placementKey = sortedPlacements
+      .map(
+        (p) => `${p.pieceId}@${p.row},${p.col}:${p.orientationIndex}`
+      )
+      .join(";");
+    puzzleKeyParts.push(placementKey);
+    const puzzleKey = puzzleKeyParts.join("|");
+
+    let cache = globalCache.get(puzzleKey);
+    if (!cache) {
+      cache = new Map<string, number>();
+      globalCache.set(puzzleKey, cache);
+    }
+
+    runSolver(msg.targetMonth, msg.targetDay, pieces, initialPlacements, cache);
   }
 });
 
@@ -88,7 +115,8 @@ function runSolver(
   targetMonth: string,
   targetDay: number,
   pieces: SolverPiece[],
-  initialPlacements: InitialPlacement[]
+  initialPlacements: InitialPlacement[],
+  cache: StateCache
 ) {
   const targets = getTargetCells(targetMonth, targetDay);
   const targetSet = new Set(targets.map(([r, c]) => `${r},${c}`));
@@ -113,8 +141,6 @@ function runSolver(
     new Array(GRID_COLS).fill(false)
   );
   const fillStack: [number, number][] = [];
-
-  const cache = new Map<string, number>();
 
   let solutionCount = 0;
   let lastReportTime = 0;
@@ -246,7 +272,7 @@ function runSolver(
     console.log("Solver initial state cache hit", initialKey);
   } else {
     console.log("Solver initial state cache miss", initialKey);
-    console.log("Keys in cache:", Array.from(cache.keys()));
+    console.log("Keys in global cache:", Array.from(globalCache.keys()));
   }
 
   function backtrack(): number {
