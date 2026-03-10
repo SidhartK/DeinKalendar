@@ -114,6 +114,8 @@ function runSolver(
   );
   const fillStack: [number, number][] = [];
 
+  const cache = new Map<string, number>();
+
   let solutionCount = 0;
   let lastReportTime = 0;
 
@@ -219,8 +221,48 @@ function runSolver(
     return;
   }
 
-  function backtrack(): void {
-    if (cancelled) return;
+  function makeStateKey(): string {
+    const openCells: number[] = [];
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (board[r][c] === 0) {
+          openCells.push(r * GRID_COLS + c);
+        }
+      }
+    }
+
+    const remainingPieces: number[] = [];
+    for (let i = 0; i < pieces.length; i++) {
+      if (!used[i]) {
+        remainingPieces.push(i);
+      }
+    }
+
+    return `${openCells.join(",")}|${remainingPieces.join(",")}`;
+  }
+
+  const initialKey = makeStateKey();
+  if (cache.has(initialKey)) {
+    console.log("Solver initial state cache hit", initialKey);
+  } else {
+    console.log("Solver initial state cache miss", initialKey);
+    console.log("Keys in cache:", Array.from(cache.keys()));
+  }
+
+  function backtrack(): number {
+    if (cancelled) return 0;
+
+    const key = makeStateKey();
+    const cached = cache.get(key);
+    if (cached !== undefined) {
+      solutionCount += cached;
+      const now = performance.now();
+      if (now - lastReportTime > 100) {
+        sendMessage({ type: "progress", count: solutionCount });
+        lastReportTime = now;
+      }
+      return cached;
+    }
 
     let tr = -1;
     let tc = -1;
@@ -234,14 +276,18 @@ function runSolver(
     }
 
     if (tr === -1) {
-      solutionCount++;
+      const localCount = 1;
+      solutionCount += localCount;
       const now = performance.now();
       if (now - lastReportTime > 100) {
         sendMessage({ type: "progress", count: solutionCount });
         lastReportTime = now;
       }
-      return;
+      cache.set(key, localCount);
+      return localCount;
     }
+
+    let localCount = 0;
 
     for (let pi = 0; pi < pieces.length; pi++) {
       if (used[pi] || cancelled) continue;
@@ -277,13 +323,16 @@ function runSolver(
         used[pi] = true;
 
         if (!hasIsolatedRegion()) {
-          backtrack();
+          localCount += backtrack();
         }
 
         for (const [r, c] of placed) board[r][c] = 0;
         used[pi] = false;
       }
     }
+
+    cache.set(key, localCount);
+    return localCount;
   }
 
   try {
