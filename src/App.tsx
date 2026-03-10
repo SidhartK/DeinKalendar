@@ -171,7 +171,10 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
 
   const celebratedRef = useRef(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [solverUsed, setSolverUsed] = useState(false);
+  const [solverUsedByDate, setSolverUsedByDate] = useState<Record<string, boolean>>({});
+
+  const currentDateKey = `${targetMonth}|${targetDay}`;
+  const solverUsedForCurrentDate = !!solverUsedByDate[currentDateKey];
 
   useEffect(() => {
     if (!isPuzzleComplete) {
@@ -321,7 +324,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
             <p className="celebration-subtitle">
               All pieces placed for {targetMonth} {targetDay}.
             </p>
-            {!solverUsed && (
+            {!solverUsedForCurrentDate && (
               <p className="celebration-subtitle">
                 You found the solution with no help!
               </p>
@@ -349,7 +352,12 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
             targetMonth={targetMonth}
             targetDay={targetDay}
             placedPieces={placedPieces}
-            onSolveStart={() => setSolverUsed(true)}
+            onSolveStart={() =>
+              setSolverUsedByDate((prev) => ({
+                ...prev,
+                [currentDateKey]: true,
+              }))
+            }
           />
         </div>
         <div className="app-left-column">
