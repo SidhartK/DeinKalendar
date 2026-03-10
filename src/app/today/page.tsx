@@ -1,21 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import App from "@/App";
 import { MONTHS } from "@/types";
 
 export default function TodayPage() {
-  const { month, day } = useMemo(() => {
+  const [date, setDate] = useState<{ month: string; day: number } | null>(null);
+
+  useEffect(() => {
     const today = new Date();
-    console.log("[/today] local now:", today.toString(), {
-      month: MONTHS[today.getMonth()],
-      day: today.getDate(),
-    });
-    return {
-      month: MONTHS[today.getMonth()],
-      day: today.getDate(),
-    };
+    const month = MONTHS[today.getMonth()];
+    const day = today.getDate();
+    console.log("[/today] local now:", today.toString(), { month, day });
+    setDate({ month, day });
   }, []);
 
-  return <App initialMonth={month} initialDay={day} />;
+  if (!date) {
+    return <div style={{ padding: 16 }}>Loading today&apos;s date…</div>;
+  }
+
+  return <App initialMonth={date.month} initialDay={date.day} />;
 }
