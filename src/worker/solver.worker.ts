@@ -55,7 +55,8 @@ interface InitialPlacement {
 }
 
 type StateCache = Map<string, number>;
-const globalCache = new Map<string, StateCache>();
+type GoalCache = Map<string, StateCache>;
+const globalCache = new Map<string, GoalCache>();
 
 function sendMessage(msg: unknown): void {
   (self as unknown as { postMessage(m: unknown): void }).postMessage(msg);
@@ -84,9 +85,14 @@ self.addEventListener("message", (e: MessageEvent) => {
       ? msg.initialPlacements
       : [];
 
+    const dateKey = `${msg.targetMonth}|${msg.targetDay}`;
+    let goalCache = globalCache.get(dateKey);
+    if (!goalCache) {
+      goalCache = new Map<string, StateCache>();
+      globalCache.set(dateKey, goalCache);
+    }
+
     const puzzleKeyParts: string[] = [];
-    puzzleKeyParts.push(String(msg.targetMonth));
-    puzzleKeyParts.push(String(msg.targetDay));
     const sortedPlacements = [...initialPlacements].sort((a, b) => {
       if (a.pieceId !== b.pieceId) return a.pieceId - b.pieceId;
       if (a.row !== b.row) return a.row - b.row;
@@ -101,13 +107,21 @@ self.addEventListener("message", (e: MessageEvent) => {
     puzzleKeyParts.push(placementKey);
     const puzzleKey = puzzleKeyParts.join("|");
 
-    let cache = globalCache.get(puzzleKey);
+    let cache = goalCache.get(puzzleKey);
     if (!cache) {
       cache = new Map<string, number>();
-      globalCache.set(puzzleKey, cache);
+      goalCache.set(puzzleKey, cache);
     }
+    const statesForDate = goalCache.size;
 
-    runSolver(msg.targetMonth, msg.targetDay, pieces, initialPlacements, cache);
+    runSolver(
+      msg.targetMonth,
+      msg.targetDay,
+      pieces,
+      initialPlacements,
+      cache,
+      statesForDate
+    );
   }
 });
 
@@ -116,7 +130,8 @@ function runSolver(
   targetDay: number,
   pieces: SolverPiece[],
   initialPlacements: InitialPlacement[],
-  cache: StateCache
+  cache: StateCache,
+  statesForDate: number
 ) {
   const targets = getTargetCells(targetMonth, targetDay);
   const targetSet = new Set(targets.map(([r, c]) => `${r},${c}`));
@@ -374,6 +389,6 @@ function runSolver(
   sendMessage({
     type: "done",
     totalCount: solutionCount,
-    cacheStates: globalCache.size,
+    cacheStates: statesForDate,
   });
 }
