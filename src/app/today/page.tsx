@@ -11,7 +11,6 @@ export default function TodayPage() {
     const today = new Date();
     const month = MONTHS[today.getMonth()];
     const day = today.getDate();
-    console.log("[/today] local now:", today.toString(), { month, day });
     setDate({ month, day });
   }, []);
 
