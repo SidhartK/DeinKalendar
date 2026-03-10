@@ -24,14 +24,16 @@ interface ReducerState {
   removedByWStack: PlacedPiece[];
 }
 
-const initialState: ReducerState = {
-  placedPieces: [],
-  targetMonth: "Jan",
-  targetDay: 1,
-  selectedPieceId: null,
-  selectedOrientation: 0,
-  removedByWStack: [],
-};
+function getInitialState(initialMonth: string, initialDay: number): ReducerState {
+  return {
+    placedPieces: [],
+    targetMonth: initialMonth,
+    targetDay: initialDay,
+    selectedPieceId: null,
+    selectedOrientation: 0,
+    removedByWStack: [],
+  };
+}
 
 function gameReducer(state: ReducerState, action: GameAction): ReducerState {
   switch (action.type) {
@@ -116,10 +118,18 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
   }
 }
 
-export default function App() {
+interface AppProps {
+  initialMonth?: string;
+  initialDay?: number;
+}
+
+export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) {
   const pieces = useMemo(() => getPieces(), []);
   const solverRef = useRef<SolverPanelRef>(null);
-  const [state, dispatch] = useReducer(gameReducer, initialState);
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    getInitialState(initialMonth, initialDay)
+  );
   const {
     placedPieces,
     targetMonth,
@@ -323,7 +333,7 @@ export default function App() {
       <header className="app-header">
         <h1>Calendar Puzzle</h1>
         <p className="app-instructions">
-          Set the date to today&apos;s date. Place all of the pieces on the board so that they do not cover the yellow highlighted month and day squares.
+          Place all of the pieces on the board so that they do not cover the yellow highlighted month and day squares.
         </p>
       </header>
       <main className="app-main">
