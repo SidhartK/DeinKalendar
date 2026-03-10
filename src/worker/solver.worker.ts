@@ -371,5 +371,9 @@ function runSolver(
     return;
   }
 
-  sendMessage({ type: "done", totalCount: solutionCount });
+  sendMessage({
+    type: "done",
+    totalCount: solutionCount,
+    cacheStates: globalCache.size,
+  });
 }

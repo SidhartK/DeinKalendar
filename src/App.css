@@ -84,6 +84,7 @@
   flex-wrap: wrap;
 }
 
+
 /* Solver panel fills its cell height on desktop */
 @media (min-width: 641px) {
   .app-panel--solver .solver-panel {

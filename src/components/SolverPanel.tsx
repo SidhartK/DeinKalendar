@@ -13,6 +13,7 @@ interface SolverPanelProps {
   targetMonth: string;
   targetDay: number;
   placedPieces: PlacedPiece[];
+  onSolveStart?: () => void;
 }
 
 export interface SolverPanelRef {
@@ -30,12 +31,13 @@ function formatTime(ms: number): string {
 }
 
 const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function SolverPanel(
-  { targetMonth, targetDay, placedPieces },
+  { targetMonth, targetDay, placedPieces, onSolveStart },
   ref
 ) {
   const [status, setStatus] = useState<SolverStatus>("idle");
   const [solutionCount, setSolutionCount] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [lastCacheStates, setLastCacheStates] = useState<number | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef(0);
@@ -66,6 +68,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
     setStatus("solving");
     setSolutionCount(0);
     setElapsed(0);
+    if (onSolveStart) onSolveStart();
 
     let worker = workerRef.current;
     if (!worker) {
@@ -81,6 +84,11 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
           setSolutionCount(msg.count);
         } else if (msg.type === "done") {
           setSolutionCount(msg.totalCount);
+          if (typeof msg.cacheStates === "number") {
+            setLastCacheStates(msg.cacheStates);
+          } else {
+            setLastCacheStates(null);
+          }
           setStatus("done");
           setElapsed(performance.now() - startTimeRef.current);
           if (timerRef.current !== null) {
@@ -166,6 +174,14 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
             <span className="solver-label">Time</span>
             <span className="solver-value">{formatTime(elapsed)}</span>
           </div>
+          {lastCacheStates !== null && (
+            <div className="solver-stat">
+              <span className="solver-label">Solve states seen</span>
+              <span className="solver-value">
+                {lastCacheStates.toLocaleString()}
+              </span>
+            </div>
+          )}
           {status === "solving" && (
             <div className="solver-status solving">Solving…</div>
           )}
