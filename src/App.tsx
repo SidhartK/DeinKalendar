@@ -333,7 +333,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
       <header className="app-header">
         <h1>Calendar Puzzle</h1>
         <p className="app-instructions">
-          Place all of the pieces on the board so that they do not cover the yellow highlighted month and day squares.
+          Place all of the pieces on the board so that they do not cover the month and day squares (highlighted in yellow).
         </p>
       </header>
       <main className="app-main">
