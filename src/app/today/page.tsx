@@ -7,6 +7,10 @@ import { MONTHS } from "@/types";
 export default function TodayPage() {
   const { month, day } = useMemo(() => {
     const today = new Date();
+    console.log("[/today] local now:", today.toString(), {
+      month: MONTHS[today.getMonth()],
+      day: today.getDate(),
+    });
     return {
       month: MONTHS[today.getMonth()],
       day: today.getDate(),
