@@ -322,6 +322,9 @@ export default function App() {
       )}
       <header className="app-header">
         <h1>Calendar Puzzle</h1>
+        <p className="app-instructions">
+          Set the date to today&apos;s date. Place all of the pieces on the board so that they do not cover the yellow highlighted month and day squares.
+        </p>
       </header>
       <main className="app-main">
         <div className="app-panel app-panel--solver">

@@ -132,7 +132,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
     <div className="solver-panel">
       <h3>Solver</h3>
       <p className="solver-description">
-        Counts completions consistent with the current board layout.
+        When you click &quot;Solve&quot;, you get the number of solutions available given the pieces you have on the board.
       </p>
       <div className="solver-controls">
         {status !== "solving" ? (

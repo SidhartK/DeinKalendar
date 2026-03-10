@@ -8,6 +8,15 @@
 
 .app-header {
   margin-bottom: 28px;
+  text-align: center;
+  max-width: 560px;
+}
+
+.app-instructions {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #444;
 }
 
 .app-header h1 {
