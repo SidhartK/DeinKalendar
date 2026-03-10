@@ -191,6 +191,14 @@
     order: 2;
   }
 
+  /* In a stacked mobile layout, the board panel should size to content.
+     Otherwise, flex: 1 1 0 can collapse the panel height and make the board
+     visually overlap the pieces section. */
+  .app-left-column .app-panel--board {
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+
   .app-panel--pieces {
     order: 3;
   }
