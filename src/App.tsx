@@ -126,6 +126,7 @@ interface AppProps {
 export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) {
   const pieces = useMemo(() => getPieces(), []);
   const solverRef = useRef<SolverPanelRef>(null);
+  const celebrationDismissBtnRef = useRef<HTMLButtonElement | null>(null);
   const [state, dispatch] = useReducer(
     gameReducer,
     getInitialState(initialMonth, initialDay)
@@ -222,6 +223,22 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
       clearTimeout(hide);
     };
   }, [isPuzzleComplete]);
+
+  useEffect(() => {
+    if (!showCelebration) return;
+
+    celebrationDismissBtnRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      e.stopPropagation();
+      setShowCelebration(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [showCelebration]);
 
   const selectedPiece =
     selectedPieceId != null ? getPieceById(selectedPieceId) ?? null : null;
@@ -332,9 +349,10 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
             <button
               type="button"
               className="celebration-dismiss"
+              ref={celebrationDismissBtnRef}
               onClick={() => setShowCelebration(false)}
             >
-              Dismiss
+              Dismiss (↩)
             </button>
           </div>
         </div>
