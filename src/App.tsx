@@ -352,7 +352,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
               ref={celebrationDismissBtnRef}
               onClick={() => setShowCelebration(false)}
             >
-              Dismiss (↩)
+              Dismiss (&#x21A9;)
             </button>
           </div>
         </div>
