@@ -85,6 +85,15 @@ function formatTime(totalSeconds: number): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
+function formatDuration(seconds: number): string {
+  const s = Math.max(0, seconds);
+  if (s >= 60) {
+    const m = Math.floor(s / 60);
+    return m === 1 ? "1 minute" : `${m} minutes`;
+  }
+  return s === 1 ? "1 second" : `${s} seconds`;
+}
+
 function formatCountdown(ms: number): string {
   const totalSecs = Math.max(0, Math.floor(ms / 1000));
   const days = Math.floor(totalSecs / 86400);
@@ -214,7 +223,7 @@ export default function PiDayCompetition() {
             <h2 className="pi-rules-title">Rules</h2>
             <ul className="pi-rules-list">
               <li>
-                You have <strong>30 minutes</strong> to find as many unique
+                You have <strong>{formatDuration(getTimerDuration())}</strong> to find as many unique
                 solutions as possible for <strong>March 14</strong>.
               </li>
               <li>
