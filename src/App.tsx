@@ -256,6 +256,7 @@ export default function App({
       clearTimeout(t2);
       clearTimeout(hide);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPuzzleComplete]);
 
   useEffect(() => {

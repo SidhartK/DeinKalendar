@@ -244,7 +244,7 @@ export default function PiDayCompetition() {
                 configuration — same config used again? No penalty.
               </li>
               <li>
-                There's no pause. Once you start, the clock runs until it hits
+                There&apos;s no pause. Once you start, the clock runs until it hits
                 zero.
               </li>
             </ul>
