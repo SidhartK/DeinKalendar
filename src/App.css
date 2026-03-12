@@ -77,14 +77,6 @@
   grid-row: 2;
 }
 
-.board-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-
 /* Solver panel fills its cell height on desktop */
 @media (min-width: 641px) {
   .app-panel--solver .solver-panel {

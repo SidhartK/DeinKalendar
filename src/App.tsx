@@ -13,6 +13,7 @@ import Board from "./components/Board";
 import PieceTray from "./components/PieceTray";
 import DateSelector from "./components/DateSelector";
 import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
+import HelpHotkeys from "./components/HelpHotkeys";
 import "./App.css";
 
 interface ReducerState {
@@ -329,6 +330,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
 
   return (
     <div className="app">
+      <HelpHotkeys />
       {showCelebration && (
         <div
           className="celebration-overlay"
@@ -397,24 +399,6 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
               onPlacePiece={handlePlacePiece}
               onPickUpPiece={handlePickUpPiece}
             />
-            <div className="board-actions">
-              <button
-                type="button"
-                className="control-btn remove-last-piece-btn"
-                onClick={handleRemoveLastPiece}
-                disabled={placedPieces.length === 0}
-              >
-                Remove the last piece (Q)
-              </button>
-              <button
-                type="button"
-                className="control-btn undo-removal-btn"
-                onClick={handleRestoreLastRemoved}
-                disabled={state.removedByWStack.length === 0}
-              >
-                Undo last removal (W)
-              </button>
-            </div>
           </div>
         </div>
         <div className="app-panel app-panel--pieces">

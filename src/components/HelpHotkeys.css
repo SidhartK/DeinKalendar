@@ -1,0 +1,133 @@
+/* Help icon and panel: desktop only */
+.help-hotkeys-trigger {
+  display: none;
+}
+
+@media (min-width: 641px) {
+  .help-hotkeys-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #555;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  }
+
+  .help-hotkeys-trigger:hover {
+    color: #333;
+    background: #fff;
+    transform: scale(1.05);
+  }
+
+  .help-hotkeys-trigger[aria-expanded="true"] {
+    color: #fff;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-color: transparent;
+  }
+}
+
+.help-hotkeys-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.help-hotkeys-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 102;
+  width: min(320px, calc(100vw - 32px));
+  padding: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.help-hotkeys-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #f8f9fa, #eee);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.help-hotkeys-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.help-hotkeys-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: #666;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.help-hotkeys-close:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.help-hotkeys-list {
+  margin: 0;
+  padding: 12px 18px 16px;
+  list-style: none;
+}
+
+.help-hotkeys-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #444;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.help-hotkeys-list li:last-child {
+  border-bottom: none;
+}
+
+.help-hotkeys-list kbd {
+  flex-shrink: 0;
+  min-width: 52px;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-align: center;
+}

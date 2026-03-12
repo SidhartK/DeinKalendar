@@ -83,10 +83,10 @@ export default function PieceTray({
           type="button"
           className="control-btn deselect-btn"
           onClick={() => onSelectPiece(null)}
-          title="Deselect (Esc)"
+          title="Deselect"
           disabled={!selectedPieceId}
         >
-          Deselect (Esc)
+          Deselect
         </button>
       </div>
 

@@ -155,8 +155,8 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
       </p>
       <div className="solver-controls">
         {status !== "solving" ? (
-          <button className="solver-btn solve-btn" onClick={handleStart} title="Solve (F)">
-            Solve (S)
+          <button className="solver-btn solve-btn" onClick={handleStart} title="Solve">
+            Solve
           </button>
         ) : (
           <button className="solver-btn stop-btn" onClick={handleStop}>
