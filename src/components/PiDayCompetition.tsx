@@ -193,9 +193,6 @@ export default function PiDayCompetition() {
           <div className="pi-countdown-timer" aria-live="polite" aria-label="Time until Pi Day">
             {formatCountdown(countdownMs)}
           </div>
-          <p className="pi-page-hint">
-            Find as many unique solutions as possible for March 14 in 30 minutes!
-          </p>
         </div>
       </div>
     );
