@@ -118,12 +118,13 @@ export default function PiDayCompetition() {
   const [timeRemaining, setTimeRemaining] = useState(DEFAULT_DURATION_SECONDS);
   const [solutionCount, setSolutionCount] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
-  const [totalPenaltySeconds, setTotalPenaltySeconds] = useState(0);
+  const [bestSolutionSeconds, setBestSolutionSeconds] = useState<number | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const solutionKeysRef = useRef(new Set<string>());
   const usedPuzzleKeysRef = useRef(new Set<string>());
   const totalDurationRef = useRef(DEFAULT_DURATION_SECONDS);
+  const lastSolutionTimeRef = useRef<number | null>(null);
 
   // Countdown to Pi Day
   useEffect(() => {
@@ -170,9 +171,10 @@ export default function PiDayCompetition() {
     setTimeRemaining(duration);
     setSolutionCount(0);
     setHintsUsed(0);
-    setTotalPenaltySeconds(0);
+    setBestSolutionSeconds(null);
     solutionKeysRef.current = new Set();
     usedPuzzleKeysRef.current = new Set();
+    lastSolutionTimeRef.current = Date.now();
     setCompetitionState("active");
   }, []);
 
@@ -181,6 +183,13 @@ export default function PiDayCompetition() {
     if (!solutionKeysRef.current.has(key)) {
       solutionKeysRef.current.add(key);
       setSolutionCount(solutionKeysRef.current.size);
+
+      const now = Date.now();
+      const gapSeconds = Math.round((now - (lastSolutionTimeRef.current ?? now)) / 1000);
+      lastSolutionTimeRef.current = now;
+      setBestSolutionSeconds((prev) =>
+        prev === null ? gapSeconds : Math.min(prev, gapSeconds)
+      );
     }
   }, []);
 
@@ -189,7 +198,6 @@ export default function PiDayCompetition() {
     if (!usedPuzzleKeysRef.current.has(puzzleKey)) {
       usedPuzzleKeysRef.current.add(puzzleKey);
       setHintsUsed((prev) => prev + 1);
-      setTotalPenaltySeconds((prev) => prev + PENALTY_SECONDS);
       setTimeRemaining((prev) => Math.max(0, prev - PENALTY_SECONDS));
     }
   }, []);
@@ -269,9 +277,9 @@ export default function PiDayCompetition() {
             </div>
             <div className="pi-result-card">
               <span className="pi-result-value">
-                -{formatTime(totalPenaltySeconds)}
+                {bestSolutionSeconds === null ? "—" : `${bestSolutionSeconds}s`}
               </span>
-              <span className="pi-result-label">Total Penalty Time</span>
+              <span className="pi-result-label">Best Solution Time</span>
             </div>
           </div>
           <button
