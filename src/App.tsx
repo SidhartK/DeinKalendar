@@ -116,15 +116,32 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         removedByWStack: state.removedByWStack.slice(0, -1),
       };
     }
+    case "CLEAR_BOARD":
+      return {
+        ...state,
+        placedPieces: [],
+        selectedPieceId: null,
+        selectedOrientation: 0,
+        removedByWStack: [],
+      };
   }
 }
 
 interface AppProps {
   initialMonth?: string;
   initialDay?: number;
+  competitionMode?: boolean;
+  onSolutionFound?: (placedPieces: PlacedPiece[]) => void;
+  onSolveHint?: (placedPieces: PlacedPiece[]) => void;
 }
 
-export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) {
+export default function App({
+  initialMonth = "Jan",
+  initialDay = 1,
+  competitionMode = false,
+  onSolutionFound,
+  onSolveHint,
+}: AppProps) {
   const pieces = useMemo(() => getPieces(), []);
   const solverRef = useRef<SolverPanelRef>(null);
   const celebrationDismissBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -173,6 +190,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
 
   const celebratedRef = useRef(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showSolutionToast, setShowSolutionToast] = useState(false);
   const [solverUsedByDate, setSolverUsedByDate] = useState<Record<string, boolean>>({});
 
   const currentDateKey = `${targetMonth}|${targetDay}`;
@@ -186,6 +204,21 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
     if (celebratedRef.current) return;
     celebratedRef.current = true;
     console.log("Puzzle solved!", { targetMonth, targetDay });
+
+    if (competitionMode) {
+      onSolutionFound?.(placedPieces);
+      setShowSolutionToast(true);
+      const hideToast = setTimeout(() => setShowSolutionToast(false), 2000);
+      const clearBoard = setTimeout(() => {
+        dispatch({ type: "CLEAR_BOARD" });
+        celebratedRef.current = false;
+      }, 2000);
+      return () => {
+        clearTimeout(hideToast);
+        clearTimeout(clearBoard);
+      };
+    }
+
     setShowCelebration(true);
 
     const duration = 3 * 1000;
@@ -223,6 +256,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
       clearTimeout(t2);
       clearTimeout(hide);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPuzzleComplete]);
 
   useEffect(() => {
@@ -311,8 +345,11 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
   }, [state.removedByWStack.length]);
 
   const handleSolve = useCallback(() => {
+    if (competitionMode) {
+      onSolveHint?.(placedPieces);
+    }
     solverRef.current?.start();
-  }, []);
+  }, [competitionMode, onSolveHint, placedPieces]);
 
   const handleMonthChange = useCallback(
     (month: string) => {
@@ -359,8 +396,13 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
           </div>
         </div>
       )}
+      {showSolutionToast && (
+        <div className="solution-toast" role="status" aria-live="polite">
+          Solution recorded!
+        </div>
+      )}
       <header className="app-header">
-        <h1>Calendar Puzzle</h1>
+        <h1>{competitionMode ? "Pi Day Competition" : "Calendar Puzzle"}</h1>
         <p className="app-instructions">
           Place all of the pieces on the board so that they do not cover the month and day squares (highlighted in yellow).
         </p>
@@ -381,6 +423,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
           />
         </div>
         <div className="app-left-column">
+          {!competitionMode && (
           <div className="app-panel app-panel--date">
             <DateSelector
               month={targetMonth}
@@ -389,6 +432,7 @@ export default function App({ initialMonth = "Jan", initialDay = 1 }: AppProps) 
               onDayChange={handleDayChange}
             />
           </div>
+          )}
           <div className="app-panel app-panel--board">
             <Board
               grid={grid}

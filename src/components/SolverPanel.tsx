@@ -130,7 +130,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
       })),
       initialPlacements,
     });
-  }, [targetMonth, targetDay, placedPieces, cleanup]);
+  }, [targetMonth, targetDay, placedPieces, cleanup, onSolveStart]);
 
   useImperativeHandle(ref, () => ({
     start: handleStart,

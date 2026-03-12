@@ -1,0 +1,364 @@
+/* ============================================================
+   Shared competition layout
+   ============================================================ */
+
+.pi-competition {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   Full-page centred panels (countdown / ready / finished)
+   ============================================================ */
+
+.pi-full-page-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  gap: 20px;
+}
+
+/* Large π glyph */
+.pi-symbol {
+  font-size: 96px;
+  line-height: 1;
+  background: linear-gradient(135deg, #e74c3c, #f39c12, #2ecc71, #3498db);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  user-select: none;
+}
+
+.pi-page-title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0;
+  background: linear-gradient(135deg, #e74c3c, #f39c12, #2ecc71, #3498db);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pi-page-subtitle {
+  font-size: 18px;
+  color: #555;
+  margin: 0;
+}
+
+.pi-page-hint {
+  font-size: 15px;
+  color: #777;
+  max-width: 420px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================================
+   Countdown state
+   ============================================================ */
+
+.pi-countdown-timer {
+  font-size: 52px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  color: #2c3e50;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 16px;
+  padding: 20px 40px;
+  line-height: 1.1;
+}
+
+/* ============================================================
+   Ready state — rules card
+   ============================================================ */
+
+.pi-rules {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 14px;
+  padding: 24px 32px;
+  text-align: left;
+  max-width: 480px;
+  width: 100%;
+}
+
+.pi-rules-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pi-rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pi-rules-list li {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.6;
+  padding-left: 20px;
+  position: relative;
+}
+
+.pi-rules-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #3498db;
+  font-weight: 700;
+}
+
+.pi-rules-list strong {
+  color: #2c3e50;
+}
+
+/* ============================================================
+   Start / Play Again button
+   ============================================================ */
+
+.pi-start-btn {
+  padding: 14px 40px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 20px rgba(52, 152, 219, 0.35);
+}
+
+.pi-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(52, 152, 219, 0.45);
+}
+
+.pi-start-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+}
+
+.pi-start-btn--secondary {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  box-shadow: 0 4px 20px rgba(46, 204, 113, 0.35);
+}
+
+.pi-start-btn--secondary:hover {
+  box-shadow: 0 8px 28px rgba(46, 204, 113, 0.45);
+}
+
+/* ============================================================
+   Finished state — results grid
+   ============================================================ */
+
+.pi-results-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+.pi-result-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 14px;
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 140px;
+  flex: 1;
+}
+
+.pi-result-card--highlight {
+  background: linear-gradient(135deg, #f0f9ff, #e0f4ff);
+  border-color: #90cdf4;
+}
+
+.pi-result-value {
+  font-size: 40px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  color: #2c3e50;
+  line-height: 1;
+}
+
+.pi-result-card--highlight .pi-result-value {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pi-result-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+/* ============================================================
+   Active state — header bar
+   ============================================================ */
+
+.pi-active-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Progress bar track */
+.pi-timer-bar-track {
+  height: 6px;
+  background: #e9ecef;
+  overflow: hidden;
+}
+
+.pi-timer-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  transition: width 1s linear, background 0.5s ease;
+  border-radius: 0 3px 3px 0;
+}
+
+.pi-timer-bar-fill--warning {
+  background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.pi-timer-bar-fill--low {
+  background: linear-gradient(90deg, #e74c3c, #c0392b);
+  animation: pi-bar-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes pi-bar-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+/* Stats row */
+.pi-active-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 10px 24px;
+}
+
+.pi-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.pi-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  color: #2c3e50;
+  line-height: 1.1;
+}
+
+.pi-stat-value--timer {
+  font-size: 28px;
+}
+
+.pi-stat-value--low {
+  color: #e74c3c;
+  animation: pi-timer-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes pi-timer-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.pi-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .pi-symbol {
+    font-size: 64px;
+  }
+
+  .pi-page-title {
+    font-size: 26px;
+  }
+
+  .pi-countdown-timer {
+    font-size: 36px;
+    padding: 16px 24px;
+  }
+
+  .pi-rules {
+    padding: 18px 20px;
+  }
+
+  .pi-active-stats {
+    gap: 20px;
+    padding: 8px 16px;
+  }
+
+  .pi-stat-value {
+    font-size: 18px;
+  }
+
+  .pi-stat-value--timer {
+    font-size: 22px;
+  }
+
+  .pi-results-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pi-result-card {
+    min-width: 0;
+  }
+}

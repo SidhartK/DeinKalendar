@@ -57,7 +57,8 @@ export type GameAction =
   | { type: "REMOVE_PIECE"; pieceId: number }
   | { type: "PICK_UP_PIECE"; pieceId: number }
   | { type: "REMOVE_LAST_PIECE" }
-  | { type: "RESTORE_LAST_REMOVED" };
+  | { type: "RESTORE_LAST_REMOVED" }
+  | { type: "CLEAR_BOARD" };
 
 export const PIECE_COLORS: Record<number, string> = {
   1: "#e74c3c",
