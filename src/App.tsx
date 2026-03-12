@@ -132,7 +132,7 @@ interface AppProps {
   initialDay?: number;
   competitionMode?: boolean;
   onSolutionFound?: (placedPieces: PlacedPiece[]) => void;
-  onSolveHint?: () => void;
+  onSolveHint?: (placedPieces: PlacedPiece[]) => void;
 }
 
 export default function App({
@@ -345,10 +345,10 @@ export default function App({
 
   const handleSolve = useCallback(() => {
     if (competitionMode) {
-      onSolveHint?.();
+      onSolveHint?.(placedPieces);
     }
     solverRef.current?.start();
-  }, [competitionMode, onSolveHint]);
+  }, [competitionMode, onSolveHint, placedPieces]);
 
   const handleMonthChange = useCallback(
     (month: string) => {
