@@ -60,6 +60,7 @@
 }
 
 .app-panel--solver {
+  position: relative;
   grid-column: 2;
   grid-row: 1;
   align-self: stretch;

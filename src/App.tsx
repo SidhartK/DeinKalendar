@@ -367,7 +367,6 @@ export default function App({
 
   return (
     <div className="app">
-      <HelpHotkeys />
       {showCelebration && (
         <div
           className="celebration-overlay"
@@ -409,6 +408,7 @@ export default function App({
       </header>
       <main className="app-main">
         <div className="app-panel app-panel--solver">
+          <HelpHotkeys />
           <SolverPanel
             ref={solverRef}
             targetMonth={targetMonth}
