@@ -98,10 +98,14 @@ function formatCountdown(ms: number): string {
 }
 
 export default function PiDayCompetition() {
-  const [competitionState, setCompetitionState] = useState<CompetitionState>(
-    getInitialState
-  );
+  const [competitionState, setCompetitionState] = useState<CompetitionState>("countdown");
   const [countdownMs, setCountdownMs] = useState(0);
+
+  // Defer initial state to client to avoid SSR/client hydration mismatch
+  // (getEffectiveDate reads a browser cookie; server always sees the real date)
+  useEffect(() => {
+    setCompetitionState(getInitialState());
+  }, []);
   const [timeRemaining, setTimeRemaining] = useState(DEFAULT_DURATION_SECONDS);
   const [solutionCount, setSolutionCount] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
