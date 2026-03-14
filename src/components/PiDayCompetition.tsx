@@ -18,7 +18,7 @@ interface LeaderboardRow {
 }
 
 const DEFAULT_DURATION_SECONDS = 30 * 60;
-const PENALTY_SECONDS = 30;
+const DEFAULT_PENALTY_SECONDS = 10;
 // March 14, 2026
 const PI_DAY_YEAR = 2026;
 const PI_DAY_MONTH = 2; // 0-indexed
@@ -53,6 +53,19 @@ function getTimerDuration(): number {
     // ignore
   }
   return DEFAULT_DURATION_SECONDS;
+}
+
+function getPenaltySeconds(): number {
+  try {
+    const cookie = getCookie("pi_debug_penalty");
+    if (cookie) {
+      const val = parseInt(cookie, 10);
+      if (!isNaN(val) && val >= 0) return val;
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_PENALTY_SECONDS;
 }
 
 function isPiDayOrLater(now: Date): boolean {
@@ -317,7 +330,7 @@ export default function PiDayCompetition() {
       const newHints = hintsUsedRef.current + 1;
       hintsUsedRef.current = newHints;
       setHintsUsed(newHints);
-      setTimeRemaining((prev) => Math.max(0, prev - PENALTY_SECONDS));
+      setTimeRemaining((prev) => Math.max(0, prev - getPenaltySeconds()));
     }
   }, []);
 
@@ -428,7 +441,7 @@ export default function PiDayCompetition() {
               </li>
               <li>
                 Using the solver costs{" "}
-                <strong>{PENALTY_SECONDS} seconds</strong> per unique board
+                <strong>{getPenaltySeconds()} seconds</strong> per unique board
                 configuration — same config used again? No penalty.
               </li>
               <li>
@@ -593,7 +606,7 @@ export default function PiDayCompetition() {
           <div className="pi-stat">
             <span className="pi-stat-value">{hintsUsed}</span>
             <span className="pi-stat-label">
-              Hints (−{PENALTY_SECONDS}s each)
+              Hints (−{getPenaltySeconds()}s each)
             </span>
           </div>
         </div>
