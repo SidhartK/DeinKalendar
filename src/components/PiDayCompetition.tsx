@@ -73,6 +73,8 @@ function isPiDayOrLater(now: Date): boolean {
   return now >= piDayMidnight;
 }
 
+// The challenge is permanently open on and after Pi Day 2026.
+// Visiting /pi after March 14 always goes straight to the auth screen.
 function getInitialState(): CompetitionState {
   return isPiDayOrLater(getEffectiveDate()) ? "username" : "countdown";
 }
@@ -130,7 +132,9 @@ function formatCountdown(ms: number): string {
 
 function formatDateTime(iso: string): string {
   try {
-    return new Date(iso).toLocaleTimeString([], {
+    return new Date(iso).toLocaleString([], {
+      month: "short",
+      day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -514,7 +518,7 @@ export default function PiDayCompetition() {
                       <th>Solutions</th>
                       <th>Hints</th>
                       <th>Best Time</th>
-                      <th>Finished</th>
+                      <th>Submitted</th>
                     </tr>
                   </thead>
                   <tbody>
