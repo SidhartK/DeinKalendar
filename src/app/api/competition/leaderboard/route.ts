@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getLeaderboard } from '@/lib/db';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const leaderboard = getLeaderboard();
+    const isAdmin = req.cookies.get('pi_admin')?.value === '1';
+    const leaderboard = getLeaderboard(isAdmin);
     return NextResponse.json({ leaderboard });
   } catch (err) {
     console.error('Failed to fetch leaderboard:', err);

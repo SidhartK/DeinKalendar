@@ -97,12 +97,13 @@ export function insertEntry(entry: NewEntry): void {
   );
 }
 
-export function getLeaderboard(): LeaderboardEntry[] {
+export function getLeaderboard(includeTestUsers = false): LeaderboardEntry[] {
   const db = getDb();
+  const testFilter = includeTestUsers ? '' : `AND username NOT LIKE 'sktest%'`;
   const rows = db.prepare<[], Omit<LeaderboardEntry, 'rank'>>(`
     SELECT username, solutions, hints_used, best_solution_seconds, completed_at
     FROM entries
-    WHERE is_first_attempt = 1
+    WHERE is_first_attempt = 1 ${testFilter}
     ORDER BY solutions DESC, hints_used ASC, best_solution_seconds ASC
   `).all();
 
