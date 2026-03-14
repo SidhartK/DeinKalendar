@@ -113,14 +113,14 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
 
   return (
     <div className="solver-panel">
-      <h3>Solver</h3>
+      <h3>Hint</h3>
       <p className="solver-description">
-        When you click &quot;Solve&quot;, you get the number of solutions available given the pieces you have on the board.
+        When you click &quot;Hint&quot;, you get the number of solutions available given the pieces you have on the board.
       </p>
       <div className="solver-controls">
         {status !== "solving" ? (
           <button className="solver-btn solve-btn" onClick={handleStart} title="Solve">
-            Solve (S)
+            Hint (H)
           </button>
         ) : (
           <button className="solver-btn stop-btn" onClick={handleStop}>

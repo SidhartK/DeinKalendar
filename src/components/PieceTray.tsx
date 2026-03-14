@@ -66,7 +66,7 @@ export default function PieceTray({
       } else if (e.key === "w" || e.key === "W") {
         e.preventDefault();
         onRestoreLastRemoved();
-      } else if (e.key === "s" || e.key === "S") {
+      } else if (e.key === "h" || e.key === "H") {
         e.preventDefault();
         onSolve();
       }

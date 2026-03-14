@@ -11,7 +11,7 @@ const HOTKEYS = [
   { key: "Space", action: "Place piece (when valid)" },
   { key: "Q", action: "Remove last piece" },
   { key: "W", action: "Undo last removal" },
-  { key: "S", action: "Solve" },
+  { key: "H", action: "Hint" },
 ];
 
 export default function HelpHotkeys() {

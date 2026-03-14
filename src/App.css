@@ -274,7 +274,9 @@
 
 @media (max-width: 640px) {
   .help-tutorial-trigger {
-    position: static;
-    margin: 0 auto 12px;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    margin: 0;
   }
 }
