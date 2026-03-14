@@ -6,7 +6,16 @@ import { PlacedPiece } from "../types";
 import { getPieceById, getSolverOrientationIndex } from "../utils/pieces";
 import "./PiDayCompetition.css";
 
-type CompetitionState = "countdown" | "ready" | "active" | "finished";
+type CompetitionState = "countdown" | "username" | "ready" | "active" | "finished";
+
+interface LeaderboardRow {
+  rank: number;
+  username: string;
+  solutions: number;
+  hints_used: number;
+  best_solution_seconds: number | null;
+  completed_at: string;
+}
 
 const DEFAULT_DURATION_SECONDS = 30 * 60;
 const PENALTY_SECONDS = 30;
@@ -52,7 +61,7 @@ function isPiDayOrLater(now: Date): boolean {
 }
 
 function getInitialState(): CompetitionState {
-  return isPiDayOrLater(getEffectiveDate()) ? "ready" : "countdown";
+  return isPiDayOrLater(getEffectiveDate()) ? "username" : "countdown";
 }
 
 function makeSolutionKey(placedPieces: PlacedPiece[]): string {
@@ -106,6 +115,17 @@ function formatCountdown(ms: number): string {
   return `${hours}h ${minutes}m ${seconds}s`;
 }
 
+function formatDateTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
+}
+
 export default function PiDayCompetition() {
   const [competitionState, setCompetitionState] = useState<CompetitionState>("countdown");
   const [countdownMs, setCountdownMs] = useState(0);
@@ -115,10 +135,28 @@ export default function PiDayCompetition() {
   useEffect(() => {
     setCompetitionState(getInitialState());
   }, []);
+
+  // Auth
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // Game stats (state for rendering)
   const [timeRemaining, setTimeRemaining] = useState(DEFAULT_DURATION_SECONDS);
   const [solutionCount, setSolutionCount] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [bestSolutionSeconds, setBestSolutionSeconds] = useState<number | null>(null);
+
+  // Refs mirror the stats so async callbacks always read the latest values
+  const solutionCountRef = useRef(0);
+  const hintsUsedRef = useRef(0);
+  const bestSolutionSecondsRef = useRef<number | null>(null);
+  const usernameRef = useRef("");
+
+  // Finished screen
+  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const solutionKeysRef = useRef(new Set<string>());
@@ -133,7 +171,7 @@ export default function PiDayCompetition() {
     function tick() {
       const now = getEffectiveDate();
       if (isPiDayOrLater(now)) {
-        setCompetitionState("ready");
+        setCompetitionState("username");
         return;
       }
       const piDayMidnight = new Date(PI_DAY_YEAR, PI_DAY_MONTH, PI_DAY_DATE);
@@ -143,6 +181,44 @@ export default function PiDayCompetition() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
+  }, [competitionState]);
+
+  // Submit results + fetch leaderboard whenever the game finishes
+  useEffect(() => {
+    if (competitionState !== "finished") return;
+    setLeaderboardLoading(true);
+
+    async function submitAndFetch() {
+      if (usernameRef.current) {
+        try {
+          await fetch("/api/competition/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: usernameRef.current,
+              solutions: solutionCountRef.current,
+              hints_used: hintsUsedRef.current,
+              best_solution_seconds: bestSolutionSecondsRef.current,
+              duration_seconds: totalDurationRef.current,
+            }),
+          });
+        } catch (err) {
+          console.error("Failed to submit results:", err);
+        }
+      }
+
+      try {
+        const res = await fetch("/api/competition/leaderboard");
+        const data = await res.json();
+        setLeaderboard(data.leaderboard ?? []);
+      } catch (err) {
+        console.error("Failed to fetch leaderboard:", err);
+      }
+
+      setLeaderboardLoading(false);
+    }
+
+    submitAndFetch();
   }, [competitionState]);
 
   // Active game timer
@@ -165,6 +241,34 @@ export default function PiDayCompetition() {
     };
   }, [competitionState]);
 
+  const handleAuth = useCallback(async () => {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setAuthError("Please enter a username.");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      const res = await fetch("/api/competition/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: trimmed, password }),
+      });
+      if (res.ok) {
+        usernameRef.current = trimmed;
+        setCompetitionState("ready");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setAuthError((data as { error?: string }).error ?? "Authentication failed. Please try again.");
+      }
+    } catch {
+      setAuthError("Network error. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [username, password]);
+
   const handleStart = useCallback(() => {
     const duration = getTimerDuration();
     totalDurationRef.current = duration;
@@ -172,24 +276,37 @@ export default function PiDayCompetition() {
     setSolutionCount(0);
     setHintsUsed(0);
     setBestSolutionSeconds(null);
+    solutionCountRef.current = 0;
+    hintsUsedRef.current = 0;
+    bestSolutionSecondsRef.current = null;
     solutionKeysRef.current = new Set();
     usedPuzzleKeysRef.current = new Set();
     lastSolutionTimeRef.current = Date.now();
+    setLeaderboard([]);
+    setLeaderboardLoading(false);
     setCompetitionState("active");
+  }, []);
+
+  const handlePlayAgain = useCallback(() => {
+    // Skip re-auth; go straight to ready with the same username
+    setCompetitionState("ready");
   }, []);
 
   const handleSolutionFound = useCallback((placedPieces: PlacedPiece[]) => {
     const key = makeSolutionKey(placedPieces);
     if (!solutionKeysRef.current.has(key)) {
       solutionKeysRef.current.add(key);
-      setSolutionCount(solutionKeysRef.current.size);
+      const newCount = solutionKeysRef.current.size;
+      solutionCountRef.current = newCount;
+      setSolutionCount(newCount);
 
       const now = Date.now();
       const gapSeconds = Math.round((now - (lastSolutionTimeRef.current ?? now)) / 1000);
       lastSolutionTimeRef.current = now;
-      setBestSolutionSeconds((prev) =>
-        prev === null ? gapSeconds : Math.min(prev, gapSeconds)
-      );
+      const prevBest = bestSolutionSecondsRef.current;
+      const newBest = prevBest === null ? gapSeconds : Math.min(prevBest, gapSeconds);
+      bestSolutionSecondsRef.current = newBest;
+      setBestSolutionSeconds(newBest);
     }
   }, []);
 
@@ -197,10 +314,14 @@ export default function PiDayCompetition() {
     const puzzleKey = makePuzzleKey(placedPieces);
     if (!usedPuzzleKeysRef.current.has(puzzleKey)) {
       usedPuzzleKeysRef.current.add(puzzleKey);
-      setHintsUsed((prev) => prev + 1);
+      const newHints = hintsUsedRef.current + 1;
+      hintsUsedRef.current = newHints;
+      setHintsUsed(newHints);
       setTimeRemaining((prev) => Math.max(0, prev - PENALTY_SECONDS));
     }
   }, []);
+
+  // --- Render ---
 
   if (competitionState === "countdown") {
     return (
@@ -219,6 +340,68 @@ export default function PiDayCompetition() {
     );
   }
 
+  if (competitionState === "username") {
+    return (
+      <div className="pi-competition pi-competition--username">
+        <div className="pi-full-page-content">
+          <div className="pi-symbol" aria-hidden>
+            π
+          </div>
+          <h1 className="pi-page-title">Pi Day Competition</h1>
+          <p className="pi-page-subtitle">Enter your name to join</p>
+          <form
+            className="pi-auth-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAuth();
+            }}
+          >
+            <div className="pi-form-group">
+              <label className="pi-form-label" htmlFor="pi-username">
+                Username
+              </label>
+              <input
+                id="pi-username"
+                className="pi-form-input"
+                type="text"
+                placeholder="Your name"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoFocus
+                autoComplete="username"
+                disabled={authLoading}
+              />
+            </div>
+            <div className="pi-form-group">
+              <label className="pi-form-label" htmlFor="pi-password">
+                Password{" "}
+                <span className="pi-form-optional">(optional)</span>
+              </label>
+              <input
+                id="pi-password"
+                className="pi-form-input"
+                type="password"
+                placeholder="Leave blank if none"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                disabled={authLoading}
+              />
+            </div>
+            {authError && (
+              <p className="pi-form-error" role="alert">
+                {authError}
+              </p>
+            )}
+            <button type="submit" className="pi-start-btn" disabled={authLoading}>
+              {authLoading ? "Checking…" : "Continue →"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (competitionState === "ready") {
     return (
       <div className="pi-competition pi-competition--ready">
@@ -227,6 +410,11 @@ export default function PiDayCompetition() {
             π
           </div>
           <h1 className="pi-page-title">Pi Day Competition</h1>
+          {usernameRef.current && (
+            <p className="pi-page-subtitle">
+              Playing as <strong>{usernameRef.current}</strong>
+            </p>
+          )}
           <div className="pi-rules">
             <h2 className="pi-rules-title">Rules</h2>
             <ul className="pi-rules-list">
@@ -258,14 +446,28 @@ export default function PiDayCompetition() {
   }
 
   if (competitionState === "finished") {
+    const currentUsername = usernameRef.current;
+    const isAdmin = getCookie("pi_admin") === "1";
+
     return (
       <div className="pi-competition pi-competition--finished">
-        <div className="pi-full-page-content">
+        <div className="pi-finished-page">
           <div className="pi-symbol" aria-hidden>
             π
           </div>
           <h1 className="pi-page-title">Time&rsquo;s Up!</h1>
-          <p className="pi-page-subtitle">Here&rsquo;s how you did:</p>
+          <p className="pi-page-subtitle">
+            Here&rsquo;s how you did
+            {currentUsername ? (
+              <>
+                , <strong>{currentUsername}</strong>
+              </>
+            ) : (
+              ""
+            )}
+            :
+          </p>
+
           <div className="pi-results-grid">
             <div className="pi-result-card pi-result-card--highlight">
               <span className="pi-result-value">{solutionCount}</span>
@@ -282,12 +484,66 @@ export default function PiDayCompetition() {
               <span className="pi-result-label">Best Solution Time</span>
             </div>
           </div>
-          <button
-            className="pi-start-btn pi-start-btn--secondary"
-            onClick={handleStart}
-          >
-            Play Again
-          </button>
+
+          <div className="pi-leaderboard">
+            <div className="pi-leaderboard-title">Leaderboard</div>
+            {leaderboardLoading ? (
+              <p className="pi-leaderboard-empty">Loading…</p>
+            ) : leaderboard.length === 0 ? (
+              <p className="pi-leaderboard-empty">No entries yet.</p>
+            ) : (
+              <div className="pi-leaderboard-scroll">
+                <table className="pi-leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Solutions</th>
+                      <th>Hints</th>
+                      <th>Best Time</th>
+                      <th>Finished</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((row) => (
+                      <tr
+                        key={row.username}
+                        className={row.username === currentUsername ? "pi-lb-me" : ""}
+                      >
+                        <td>{row.rank}</td>
+                        <td>
+                          {row.username}
+                          {row.username === currentUsername ? " \u2605" : ""}
+                        </td>
+                        <td>{row.solutions}</td>
+                        <td>{row.hints_used}</td>
+                        <td>
+                          {row.best_solution_seconds === null
+                            ? "—"
+                            : `${row.best_solution_seconds}s`}
+                        </td>
+                        <td>{formatDateTime(row.completed_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="pi-action-row">
+            <button
+              className="pi-start-btn pi-start-btn--secondary"
+              onClick={handlePlayAgain}
+            >
+              Play Again
+            </button>
+            {isAdmin && (
+              <a href="/api/competition/export" className="pi-admin-btn">
+                Export CSV
+              </a>
+            )}
+          </div>
         </div>
       </div>
     );
