@@ -86,7 +86,7 @@ export default function PieceTray({
           title="Deselect"
           disabled={!selectedPieceId}
         >
-          Deselect
+          Deselect (Esc)
         </button>
       </div>
 

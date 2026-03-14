@@ -173,6 +173,7 @@ export default function PiDayCompetition() {
   const [solutionCount, setSolutionCount] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [bestSolutionSeconds, setBestSolutionSeconds] = useState<number | null>(null);
+  const [showHintPenaltyFlash, setShowHintPenaltyFlash] = useState(false);
 
   // Refs mirror the stats so async callbacks always read the latest values
   const solutionCountRef = useRef(0);
@@ -186,6 +187,7 @@ export default function PiDayCompetition() {
   const [redirectedToLeaderboard, setRedirectedToLeaderboard] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hintPenaltyFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipSubmissionRef = useRef(false);
   const solutionKeysRef = useRef(new Set<string>());
   const usedPuzzleKeysRef = useRef(new Set<string>());
@@ -252,6 +254,15 @@ export default function PiDayCompetition() {
     submitAndFetch();
   }, [competitionState]);
 
+  // Clear hint penalty flash timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hintPenaltyFlashTimeoutRef.current) {
+        clearTimeout(hintPenaltyFlashTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Active game timer
   useEffect(() => {
     if (competitionState !== "active") return;
@@ -317,7 +328,12 @@ export default function PiDayCompetition() {
     setTimeRemaining(duration);
     setSolutionCount(0);
     setHintsUsed(0);
+    setShowHintPenaltyFlash(false);
     setBestSolutionSeconds(null);
+    if (hintPenaltyFlashTimeoutRef.current) {
+      clearTimeout(hintPenaltyFlashTimeoutRef.current);
+      hintPenaltyFlashTimeoutRef.current = null;
+    }
     solutionCountRef.current = 0;
     hintsUsedRef.current = 0;
     bestSolutionSecondsRef.current = null;
@@ -373,6 +389,12 @@ export default function PiDayCompetition() {
       hintsUsedRef.current = newHints;
       setHintsUsed(newHints);
       setTimeRemaining((prev) => Math.max(0, prev - getPenaltySeconds(competitionModeRef.current)));
+      if (hintPenaltyFlashTimeoutRef.current) clearTimeout(hintPenaltyFlashTimeoutRef.current);
+      setShowHintPenaltyFlash(true);
+      hintPenaltyFlashTimeoutRef.current = setTimeout(() => {
+        hintPenaltyFlashTimeoutRef.current = null;
+        setShowHintPenaltyFlash(false);
+      }, 500);
     }
   }, []);
 
@@ -681,31 +703,40 @@ export default function PiDayCompetition() {
           />
         </div>
         <div className="pi-active-stats">
-          <div className="pi-stat">
-            <span
-              className={[
-                "pi-stat-value",
-                "pi-stat-value--timer",
-                isLow ? "pi-stat-value--low" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              aria-live="polite"
-              aria-label={`${formatTime(timeRemaining)} remaining`}
-            >
-              {formatTime(timeRemaining)}
-            </span>
-            <span className="pi-stat-label">Remaining</span>
-          </div>
-          <div className="pi-stat">
-            <span className="pi-stat-value">{solutionCount}</span>
-            <span className="pi-stat-label">Solutions</span>
-          </div>
-          <div className="pi-stat">
-            <span className="pi-stat-value">{hintsUsed}</span>
-            <span className="pi-stat-label">
-              Hints (−{getPenaltySeconds(competitionModeRef.current)}s each)
-            </span>
+          <div className="pi-active-stats-inner">
+            <div className="pi-stat">
+              <span
+                className={[
+                  "pi-stat-value",
+                  "pi-stat-value--timer",
+                  isLow ? "pi-stat-value--low" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-live="polite"
+                aria-label={`${formatTime(timeRemaining)} remaining`}
+              >
+                {formatTime(timeRemaining)}
+              </span>
+              <span className="pi-stat-label">Remaining</span>
+            </div>
+            <div className="pi-stat">
+              <span className="pi-stat-value">{solutionCount}</span>
+              <span className="pi-stat-label">Solutions</span>
+            </div>
+            <div className="pi-stat">
+              <span className="pi-stat-value">
+                {hintsUsed}
+                {showHintPenaltyFlash && (
+                  <span className="pi-stat-hint-penalty pi-stat-hint-penalty--flash">
+                    (−{getPenaltySeconds(competitionModeRef.current)}s)
+                  </span>
+                )}
+              </span>
+              <span className="pi-stat-label">
+                Hints (−{getPenaltySeconds(competitionModeRef.current)}s each)
+              </span>
+            </div>
           </div>
           <div className="pi-active-end-wrap">
             <button
