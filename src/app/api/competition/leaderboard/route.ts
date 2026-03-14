@@ -4,7 +4,7 @@ import { getLeaderboard } from '@/lib/db';
 export async function GET(req: NextRequest) {
   try {
     const isAdmin = req.cookies.get('pi_admin')?.value === '1';
-    const leaderboard = getLeaderboard(isAdmin);
+    const leaderboard = await getLeaderboard(isAdmin);
     return NextResponse.json({ leaderboard });
   } catch (err) {
     console.error('Failed to fetch leaderboard:', err);

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const entries = getAllEntries();
+    const entries = await getAllEntries();
 
     const header = 'Username,Solutions,Hints Used,Best Time (s),Duration (s),Completed At,Is First Attempt\n';
     const rows = entries.map((e) =>

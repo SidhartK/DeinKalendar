@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    insertEntry({ username, solutions, hints_used, best_solution_seconds, duration_seconds });
+    await insertEntry({ username, solutions, hints_used, best_solution_seconds, duration_seconds });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('Failed to insert entry:', err);

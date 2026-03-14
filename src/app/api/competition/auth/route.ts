@@ -17,12 +17,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Username is required' }, { status: 400 });
   }
 
-  const existing = findUser(username);
+  const existing = await findUser(username);
 
   if (!existing) {
     // New user — register them
     const hash = password ? await bcrypt.hash(password, 10) : null;
-    insertUser(username, hash);
+    await insertUser(username, hash);
     return NextResponse.json({ ok: true });
   }
 

@@ -1,5 +1,17 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
+
+// Single server-side client reused across requests (module-level singleton).
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// ─── Shared table name constants ──────────────────────────────────────────────
+
+const USERS_TABLE = 'pi_day_2026__users';
+const ENTRIES_TABLE = 'pi_day_2026__entries';
+
+// ─── Public types (unchanged contracts) ──────────────────────────────────────
 
 export interface User {
   username: string;
@@ -34,83 +46,96 @@ export interface NewEntry {
   duration_seconds: number;
 }
 
-let _db: Database.Database | null = null;
+// ─── DB helpers ───────────────────────────────────────────────────────────────
 
-function getDb(): Database.Database {
-  if (_db) return _db;
-
-  const dbPath = path.join(process.cwd(), 'competition.db');
-  _db = new Database(dbPath);
-  _db.pragma('journal_mode = WAL');
-
-  _db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      username TEXT PRIMARY KEY,
-      password_hash TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS entries (
-      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
-      username              TEXT NOT NULL,
-      solutions             INTEGER NOT NULL,
-      hints_used            INTEGER NOT NULL,
-      best_solution_seconds INTEGER,
-      duration_seconds      INTEGER NOT NULL,
-      completed_at          TEXT NOT NULL,
-      is_first_attempt      INTEGER NOT NULL DEFAULT 1
-    );
-  `);
-
-  return _db;
+function dbError(context: string, error: unknown): never {
+  throw new Error(`[db] ${context}: ${(error as { message?: string }).message ?? String(error)}`);
 }
 
-export function findUser(username: string): User | undefined {
-  const db = getDb();
-  return db.prepare<[string], User>('SELECT * FROM users WHERE username = ?').get(username);
+// ─── Public API (same signatures as the SQLite version) ───────────────────────
+
+export async function findUser(username: string): Promise<User | undefined> {
+  const { data, error } = await supabase
+    .from(USERS_TABLE)
+    .select('username, password_hash')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (error) dbError('findUser', error);
+  return data ?? undefined;
 }
 
-export function insertUser(username: string, passwordHash: string | null): void {
-  const db = getDb();
-  db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username, passwordHash);
+export async function insertUser(username: string, passwordHash: string | null): Promise<void> {
+  const { error } = await supabase
+    .from(USERS_TABLE)
+    .insert({ username, password_hash: passwordHash });
+
+  if (error) dbError('insertUser', error);
 }
 
-export function insertEntry(entry: NewEntry): void {
-  const db = getDb();
+export async function insertEntry(entry: NewEntry): Promise<void> {
+  // Determine whether this is the user's first submission.
+  const { count, error: countError } = await supabase
+    .from(ENTRIES_TABLE)
+    .select('id', { count: 'exact', head: true })
+    .eq('username', entry.username);
 
-  const { count } = db
-    .prepare<[string], { count: number }>('SELECT COUNT(*) as count FROM entries WHERE username = ?')
-    .get(entry.username)!;
+  if (countError) dbError('insertEntry (count)', countError);
 
-  const isFirstAttempt = count === 0 ? 1 : 0;
+  const isFirstAttempt = (count ?? 0) === 0;
 
-  db.prepare(`
-    INSERT INTO entries (username, solutions, hints_used, best_solution_seconds, duration_seconds, completed_at, is_first_attempt)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    entry.username,
-    entry.solutions,
-    entry.hints_used,
-    entry.best_solution_seconds,
-    entry.duration_seconds,
-    new Date().toISOString(),
-    isFirstAttempt,
-  );
+  const { error } = await supabase.from(ENTRIES_TABLE).insert({
+    username: entry.username,
+    solutions: entry.solutions,
+    hints_used: entry.hints_used,
+    best_solution_seconds: entry.best_solution_seconds,
+    duration_seconds: entry.duration_seconds,
+    completed_at: new Date().toISOString(),
+    is_first_attempt: isFirstAttempt,
+  });
+
+  if (error) dbError('insertEntry', error);
 }
 
-export function getLeaderboard(includeTestUsers = false): LeaderboardEntry[] {
-  const db = getDb();
-  const testFilter = includeTestUsers ? '' : `AND username NOT LIKE 'sktest%'`;
-  const rows = db.prepare<[], Omit<LeaderboardEntry, 'rank'>>(`
-    SELECT username, solutions, hints_used, best_solution_seconds, completed_at
-    FROM entries
-    WHERE is_first_attempt = 1 ${testFilter}
-    ORDER BY solutions DESC, hints_used ASC, best_solution_seconds ASC
-  `).all();
+export async function getLeaderboard(includeTestUsers = false): Promise<LeaderboardEntry[]> {
+  let query = supabase
+    .from(ENTRIES_TABLE)
+    .select('username, solutions, hints_used, best_solution_seconds, completed_at')
+    .eq('is_first_attempt', true)
+    .order('solutions', { ascending: false })
+    .order('hints_used', { ascending: true })
+    // Rows with null best_solution_seconds sort last (nulls last is Postgres default for ASC).
+    .order('best_solution_seconds', { ascending: true, nullsFirst: false });
 
-  return rows.map((row, i) => ({ rank: i + 1, ...row }));
+  if (!includeTestUsers) {
+    // Supabase does not expose LIKE with NOT directly; use the negation filter.
+    query = query.not('username', 'like', 'sktest%');
+  }
+
+  const { data, error } = await query;
+  if (error) dbError('getLeaderboard', error);
+
+  return (data ?? []).map((row, i) => ({
+    rank: i + 1,
+    username: row.username,
+    solutions: row.solutions,
+    hints_used: row.hints_used,
+    best_solution_seconds: row.best_solution_seconds,
+    completed_at: row.completed_at,
+  }));
 }
 
-export function getAllEntries(): Entry[] {
-  const db = getDb();
-  return db.prepare<[], Entry>('SELECT * FROM entries ORDER BY completed_at ASC').all();
+export async function getAllEntries(): Promise<Entry[]> {
+  const { data, error } = await supabase
+    .from(ENTRIES_TABLE)
+    .select('*')
+    .order('completed_at', { ascending: true });
+
+  if (error) dbError('getAllEntries', error);
+
+  // Normalise is_first_attempt to 0/1 integer to match the original Entry shape.
+  return (data ?? []).map((row) => ({
+    ...row,
+    is_first_attempt: row.is_first_attempt ? 1 : 0,
+  }));
 }
