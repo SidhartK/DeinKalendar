@@ -7,6 +7,7 @@ import { getPieceById, getSolverOrientationIndex } from "../utils/pieces";
 import "./PiDayCompetition.css";
 
 type CompetitionState = "countdown" | "username" | "ready" | "active" | "finished";
+type CompetitionMode = "main" | "mini";
 
 interface LeaderboardRow {
   rank: number;
@@ -17,8 +18,12 @@ interface LeaderboardRow {
   completed_at: string;
 }
 
-const DEFAULT_DURATION_SECONDS = 30 * 60;
-const DEFAULT_PENALTY_SECONDS = 10;
+const MODE_CONFIG = {
+  main: { duration: 30 * 60, penalty: 10 },
+  mini: { duration: 5 * 60, penalty: 5 },
+} as const;
+
+const DEFAULT_DURATION_SECONDS = MODE_CONFIG.main.duration;
 // March 14, 2026
 const PI_DAY_YEAR = 2026;
 const PI_DAY_MONTH = 2; // 0-indexed
@@ -42,7 +47,7 @@ function getEffectiveDate(): Date {
   return new Date();
 }
 
-function getTimerDuration(): number {
+function getTimerDuration(mode: CompetitionMode): number {
   try {
     const cookie = getCookie("pi_debug_timer");
     if (cookie) {
@@ -52,10 +57,10 @@ function getTimerDuration(): number {
   } catch {
     // ignore
   }
-  return DEFAULT_DURATION_SECONDS;
+  return MODE_CONFIG[mode].duration;
 }
 
-function getPenaltySeconds(): number {
+function getPenaltySeconds(mode: CompetitionMode): number {
   try {
     const cookie = getCookie("pi_debug_penalty");
     if (cookie) {
@@ -65,7 +70,7 @@ function getPenaltySeconds(): number {
   } catch {
     // ignore
   }
-  return DEFAULT_PENALTY_SECONDS;
+  return MODE_CONFIG[mode].penalty;
 }
 
 function isPiDayOrLater(now: Date): boolean {
@@ -153,6 +158,10 @@ export default function PiDayCompetition() {
     setCompetitionState(getInitialState());
   }, []);
 
+  // Competition mode
+  const [competitionMode, setCompetitionMode] = useState<CompetitionMode>("main");
+  const competitionModeRef = useRef<CompetitionMode>("main");
+
   // Auth
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -205,6 +214,8 @@ export default function PiDayCompetition() {
     if (competitionState !== "finished") return;
     setLeaderboardLoading(true);
 
+    const mode = competitionModeRef.current;
+
     async function submitAndFetch() {
       if (usernameRef.current) {
         try {
@@ -217,6 +228,7 @@ export default function PiDayCompetition() {
               hints_used: hintsUsedRef.current,
               best_solution_seconds: bestSolutionSecondsRef.current,
               duration_seconds: totalDurationRef.current,
+              competition_type: mode,
             }),
           });
         } catch (err) {
@@ -225,7 +237,7 @@ export default function PiDayCompetition() {
       }
 
       try {
-        const res = await fetch("/api/competition/leaderboard");
+        const res = await fetch(`/api/competition/leaderboard?mode=${mode}`);
         const data = await res.json();
         setLeaderboard(data.leaderboard ?? []);
       } catch (err) {
@@ -287,7 +299,8 @@ export default function PiDayCompetition() {
   }, [username, password]);
 
   const handleStart = useCallback(() => {
-    const duration = getTimerDuration();
+    competitionModeRef.current = competitionMode;
+    const duration = getTimerDuration(competitionMode);
     totalDurationRef.current = duration;
     setTimeRemaining(duration);
     setSolutionCount(0);
@@ -302,7 +315,7 @@ export default function PiDayCompetition() {
     setLeaderboard([]);
     setLeaderboardLoading(false);
     setCompetitionState("active");
-  }, []);
+  }, [competitionMode]);
 
   const handlePlayAgain = useCallback(() => {
     // Skip re-auth; go straight to ready with the same username
@@ -334,7 +347,7 @@ export default function PiDayCompetition() {
       const newHints = hintsUsedRef.current + 1;
       hintsUsedRef.current = newHints;
       setHintsUsed(newHints);
-      setTimeRemaining((prev) => Math.max(0, prev - getPenaltySeconds()));
+      setTimeRemaining((prev) => Math.max(0, prev - getPenaltySeconds(competitionModeRef.current)));
     }
   }, []);
 
@@ -420,6 +433,9 @@ export default function PiDayCompetition() {
   }
 
   if (competitionState === "ready") {
+    const modeDuration = getTimerDuration(competitionMode);
+    const modePenalty = getPenaltySeconds(competitionMode);
+
     return (
       <div className="pi-competition pi-competition--ready">
         <div className="pi-full-page-content">
@@ -432,11 +448,31 @@ export default function PiDayCompetition() {
               Playing as <strong>{usernameRef.current}</strong>
             </p>
           )}
+          <div className="pi-mode-toggle" role="radiogroup" aria-label="Competition mode">
+            <button
+              className={`pi-mode-btn ${competitionMode === "mini" ? "pi-mode-btn--active" : ""}`}
+              onClick={() => setCompetitionMode("mini")}
+              role="radio"
+              aria-checked={competitionMode === "mini"}
+            >
+              Mini
+            </button>
+            <button
+              className={`pi-mode-btn ${competitionMode === "main" ? "pi-mode-btn--active" : ""}`}
+              onClick={() => setCompetitionMode("main")}
+              role="radio"
+              aria-checked={competitionMode === "main"}
+            >
+              Main
+            </button>
+          </div>
           <div className="pi-rules">
-            <h2 className="pi-rules-title">Rules</h2>
+            <h2 className="pi-rules-title">
+              {competitionMode === "mini" ? "Mini" : "Main"} Rules
+            </h2>
             <ul className="pi-rules-list">
               <li>
-                You have <strong>{formatDuration(getTimerDuration())}</strong> to find as many unique
+                You have <strong>{formatDuration(modeDuration)}</strong> to find as many unique
                 solutions as possible for <strong>March 14</strong>.
               </li>
               <li>
@@ -445,7 +481,7 @@ export default function PiDayCompetition() {
               </li>
               <li>
                 Using the solver costs{" "}
-                <strong>{getPenaltySeconds()} seconds</strong> per unique board
+                <strong>{modePenalty} seconds</strong> per unique board
                 configuration — same config used again? No penalty.
               </li>
               <li>
@@ -453,9 +489,17 @@ export default function PiDayCompetition() {
                 zero.
               </li>
             </ul>
+            <div className="pi-rules-note">
+              Only your <strong>first attempt</strong> (Mini or Main) is eligible
+              for its leaderboard. If you play Mini first, your Main score
+              won&apos;t appear on the Main leaderboard and vice-versa. You can
+              always replay either mode for fun.
+            </div>
           </div>
           <button className="pi-start-btn" onClick={handleStart}>
-            Start Competition
+            {competitionMode === "mini"
+              ? "Play Mini Competition"
+              : "Play Main Competition"}
           </button>
         </div>
       </div>
@@ -464,6 +508,8 @@ export default function PiDayCompetition() {
 
   if (competitionState === "finished") {
     const currentUsername = usernameRef.current;
+    const finishedMode = competitionModeRef.current;
+    const modeLabel = finishedMode === "mini" ? "Mini" : "Main";
     const isAdmin = getCookie("pi_admin") === "1";
 
     return (
@@ -481,8 +527,8 @@ export default function PiDayCompetition() {
               </>
             ) : (
               ""
-            )}
-            :
+            )}{" "}
+            ({modeLabel}):
           </p>
 
           <div className="pi-results-grid">
@@ -503,7 +549,7 @@ export default function PiDayCompetition() {
           </div>
 
           <div className="pi-leaderboard">
-            <div className="pi-leaderboard-title">Leaderboard</div>
+            <div className="pi-leaderboard-title">{modeLabel} Leaderboard</div>
             {leaderboardLoading ? (
               <p className="pi-leaderboard-empty">Loading…</p>
             ) : leaderboard.length === 0 ? (
@@ -610,7 +656,7 @@ export default function PiDayCompetition() {
           <div className="pi-stat">
             <span className="pi-stat-value">{hintsUsed}</span>
             <span className="pi-stat-label">
-              Hints (−{getPenaltySeconds()}s each)
+              Hints (−{getPenaltySeconds(competitionModeRef.current)}s each)
             </span>
           </div>
         </div>

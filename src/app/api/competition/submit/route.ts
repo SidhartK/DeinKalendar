@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { insertEntry } from '@/lib/db';
+import { insertEntry, type CompetitionType } from '@/lib/db';
+
+const VALID_COMPETITION_TYPES = new Set<CompetitionType>(['main', 'mini']);
 
 export async function POST(req: NextRequest) {
   let body: {
@@ -8,6 +10,7 @@ export async function POST(req: NextRequest) {
     hints_used?: unknown;
     best_solution_seconds?: unknown;
     duration_seconds?: unknown;
+    competition_type?: unknown;
   };
 
   try {
@@ -28,6 +31,10 @@ export async function POST(req: NextRequest) {
       : null;
   const duration_seconds =
     typeof body.duration_seconds === 'number' ? body.duration_seconds : null;
+  const competition_type =
+    typeof body.competition_type === 'string' && VALID_COMPETITION_TYPES.has(body.competition_type as CompetitionType)
+      ? (body.competition_type as CompetitionType)
+      : 'main';
 
   if (!username) {
     return NextResponse.json({ error: 'username is required' }, { status: 400 });
@@ -43,7 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await insertEntry({ username, solutions, hints_used, best_solution_seconds, duration_seconds });
+    await insertEntry({ username, solutions, hints_used, best_solution_seconds, duration_seconds, competition_type });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('Failed to insert entry:', err);

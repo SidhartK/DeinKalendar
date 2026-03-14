@@ -18,6 +18,8 @@ export interface User {
   password_hash: string | null;
 }
 
+export type CompetitionType = 'main' | 'mini';
+
 export interface Entry {
   id: number;
   username: string;
@@ -27,6 +29,7 @@ export interface Entry {
   duration_seconds: number;
   completed_at: string;
   is_first_attempt: number;
+  competition_type: CompetitionType;
 }
 
 export interface LeaderboardEntry {
@@ -36,6 +39,7 @@ export interface LeaderboardEntry {
   hints_used: number;
   best_solution_seconds: number | null;
   completed_at: string;
+  competition_type: CompetitionType;
 }
 
 export interface NewEntry {
@@ -44,6 +48,7 @@ export interface NewEntry {
   hints_used: number;
   best_solution_seconds: number | null;
   duration_seconds: number;
+  competition_type: CompetitionType;
 }
 
 // ─── DB helpers ───────────────────────────────────────────────────────────────
@@ -90,6 +95,7 @@ export async function insertEntry(entry: NewEntry): Promise<void> {
     hints_used: entry.hints_used,
     best_solution_seconds: entry.best_solution_seconds,
     duration_seconds: entry.duration_seconds,
+    competition_type: entry.competition_type,
     completed_at: new Date().toISOString(),
     is_first_attempt: isFirstAttempt,
   });
@@ -97,18 +103,20 @@ export async function insertEntry(entry: NewEntry): Promise<void> {
   if (error) dbError('insertEntry', error);
 }
 
-export async function getLeaderboard(includeTestUsers = false): Promise<LeaderboardEntry[]> {
+export async function getLeaderboard(
+  competitionType: CompetitionType = 'main',
+  includeTestUsers = false,
+): Promise<LeaderboardEntry[]> {
   let query = supabase
     .from(ENTRIES_TABLE)
-    .select('username, solutions, hints_used, best_solution_seconds, completed_at')
+    .select('username, solutions, hints_used, best_solution_seconds, completed_at, competition_type')
     .eq('is_first_attempt', true)
+    .eq('competition_type', competitionType)
     .order('solutions', { ascending: false })
     .order('hints_used', { ascending: true })
-    // Rows with null best_solution_seconds sort last (nulls last is Postgres default for ASC).
     .order('best_solution_seconds', { ascending: true, nullsFirst: false });
 
   if (!includeTestUsers) {
-    // Supabase does not expose LIKE with NOT directly; use the negation filter.
     query = query.not('username', 'like', 'sktest%');
   }
 
@@ -122,6 +130,7 @@ export async function getLeaderboard(includeTestUsers = false): Promise<Leaderbo
     hints_used: row.hints_used,
     best_solution_seconds: row.best_solution_seconds,
     completed_at: row.completed_at,
+    competition_type: row.competition_type as CompetitionType,
   }));
 }
 

@@ -10,10 +10,11 @@ export async function GET(req: NextRequest) {
   try {
     const entries = await getAllEntries();
 
-    const header = 'Username,Solutions,Hints Used,Best Time (s),Duration (s),Completed At,Is First Attempt\n';
+    const header = 'Username,Competition Type,Solutions,Hints Used,Best Time (s),Duration (s),Completed At,Is First Attempt\n';
     const rows = entries.map((e) =>
       [
         `"${e.username.replace(/"/g, '""')}"`,
+        e.competition_type,
         e.solutions,
         e.hints_used,
         e.best_solution_seconds ?? '',
