@@ -120,7 +120,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
       <div className="solver-controls">
         {status !== "solving" ? (
           <button className="solver-btn solve-btn" onClick={handleStart} title="Solve">
-            Solve
+            Solve (S)
           </button>
         ) : (
           <button className="solver-btn stop-btn" onClick={handleStop}>
