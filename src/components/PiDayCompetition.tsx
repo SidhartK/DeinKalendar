@@ -19,8 +19,8 @@ interface LeaderboardRow {
 }
 
 const MODE_CONFIG = {
-  main: { duration: 30 * 60, penalty: 10 },
-  mini: { duration: 5 * 60, penalty: 5 },
+  main: { duration: 22 * 60, penalty: 6.28 },
+  mini: { duration: (6 * 60 + 28), penalty: 3.14 },
 } as const;
 
 const DEFAULT_DURATION_SECONDS = MODE_CONFIG.main.duration;
@@ -118,7 +118,13 @@ function formatDuration(seconds: number): string {
   const s = Math.max(0, seconds);
   if (s >= 60) {
     const m = Math.floor(s / 60);
-    return m === 1 ? "1 minute" : `${m} minutes`;
+    const sec = s % 60;
+    if (sec === 0) {
+      return m === 1 ? "1 minute" : `${m} minutes`;
+    }
+    const minPart = m === 1 ? "1 minute" : `${m} minutes`;
+    const secPart = sec === 1 ? "1 second" : `${sec} seconds`;
+    return `${minPart}, ${secPart}`;
   }
   return s === 1 ? "1 second" : `${s} seconds`;
 }
@@ -528,7 +534,7 @@ export default function PiDayCompetition() {
               </li>
               <li>
                 Using the solver costs{" "}
-                <strong>{modePenalty} seconds</strong> per unique board
+                <strong>{Number.isInteger(modePenalty) ? modePenalty : modePenalty.toFixed(2)} seconds</strong> per unique board
                 configuration — same config used again? No penalty.
               </li>
               <li>
