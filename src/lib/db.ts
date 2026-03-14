@@ -78,6 +78,16 @@ export async function insertUser(username: string, passwordHash: string | null):
   if (error) dbError('insertUser', error);
 }
 
+export async function hasExistingEntry(username: string): Promise<boolean> {
+  const { count, error } = await supabase
+    .from(ENTRIES_TABLE)
+    .select('id', { count: 'exact', head: true })
+    .eq('username', username);
+
+  if (error) dbError('hasExistingEntry', error);
+  return (count ?? 0) > 0;
+}
+
 export async function insertEntry(entry: NewEntry): Promise<void> {
   // Determine whether this is the user's first submission.
   const { count, error: countError } = await supabase

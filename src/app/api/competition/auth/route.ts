@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { findUser, insertUser } from '@/lib/db';
+import { findUser, insertUser, hasExistingEntry } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   let body: { username?: unknown; password?: unknown };
@@ -23,13 +23,14 @@ export async function POST(req: NextRequest) {
     // New user — register them
     const hash = password ? await bcrypt.hash(password, 10) : null;
     await insertUser(username, hash);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, has_existing_entry: false });
   }
 
   // Existing user
   if (existing.password_hash === null) {
     // No password required
-    return NextResponse.json({ ok: true });
+    const entryExists = await hasExistingEntry(username);
+    return NextResponse.json({ ok: true, has_existing_entry: entryExists });
   }
 
   // Password required — validate it
@@ -42,5 +43,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Wrong password' }, { status: 401 });
   }
 
-  return NextResponse.json({ ok: true });
+  const entryExists = await hasExistingEntry(username);
+  return NextResponse.json({ ok: true, has_existing_entry: entryExists });
 }

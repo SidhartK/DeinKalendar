@@ -14,6 +14,7 @@ interface SolverPanelProps {
   targetDay: number;
   placedPieces: PlacedPiece[];
   onSolveStart?: () => void;
+  onSolveHint?: (placedPieces: PlacedPiece[]) => void;
 }
 
 export interface SolverPanelRef {
@@ -31,7 +32,7 @@ function formatTime(ms: number): string {
 }
 
 const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function SolverPanel(
-  { targetMonth, targetDay, placedPieces, onSolveStart },
+  { targetMonth, targetDay, placedPieces, onSolveStart, onSolveHint },
   ref
 ) {
   const [status, setStatus] = useState<SolverStatus>("idle");
@@ -68,6 +69,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
     setStatus("solving");
     setSolutionCount(0);
     setElapsed(0);
+    if (onSolveHint) onSolveHint(placedPieces);
     if (onSolveStart) onSolveStart();
 
     let worker = workerRef.current;
@@ -130,7 +132,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
       })),
       initialPlacements,
     });
-  }, [targetMonth, targetDay, placedPieces, cleanup, onSolveStart]);
+  }, [targetMonth, targetDay, placedPieces, cleanup, onSolveStart, onSolveHint]);
 
   useImperativeHandle(ref, () => ({
     start: handleStart,

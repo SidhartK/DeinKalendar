@@ -183,8 +183,10 @@ export default function PiDayCompetition() {
   // Finished screen
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [redirectedToLeaderboard, setRedirectedToLeaderboard] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const skipSubmissionRef = useRef(false);
   const solutionKeysRef = useRef(new Set<string>());
   const usedPuzzleKeysRef = useRef(new Set<string>());
   const totalDurationRef = useRef(DEFAULT_DURATION_SECONDS);
@@ -217,7 +219,7 @@ export default function PiDayCompetition() {
     const mode = competitionModeRef.current;
 
     async function submitAndFetch() {
-      if (usernameRef.current) {
+      if (usernameRef.current && !skipSubmissionRef.current) {
         try {
           await fetch("/api/competition/submit", {
             method: "POST",
@@ -285,8 +287,18 @@ export default function PiDayCompetition() {
         body: JSON.stringify({ username: trimmed, password }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({})) as { has_existing_entry?: boolean };
         usernameRef.current = trimmed;
-        setCompetitionState("ready");
+        if (data.has_existing_entry) {
+          skipSubmissionRef.current = true;
+          setRedirectedToLeaderboard(true);
+          setLeaderboard([]);
+          setCompetitionState("finished");
+        } else {
+          skipSubmissionRef.current = false;
+          setRedirectedToLeaderboard(false);
+          setCompetitionState("ready");
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         setAuthError((data as { error?: string }).error ?? "Authentication failed. Please try again.");
@@ -318,7 +330,8 @@ export default function PiDayCompetition() {
   }, [competitionMode]);
 
   const handlePlayAgain = useCallback(() => {
-    // Skip re-auth; go straight to ready with the same username
+    skipSubmissionRef.current = false;
+    setRedirectedToLeaderboard(false);
     setCompetitionState("ready");
   }, []);
 
@@ -518,35 +531,53 @@ export default function PiDayCompetition() {
           <div className="pi-symbol" aria-hidden>
             π
           </div>
-          <h1 className="pi-page-title">Time&rsquo;s Up!</h1>
-          <p className="pi-page-subtitle">
-            Here&rsquo;s how you did
-            {currentUsername ? (
-              <>
-                , <strong>{currentUsername}</strong>
-              </>
-            ) : (
-              ""
-            )}{" "}
-            ({modeLabel}):
-          </p>
+          {redirectedToLeaderboard ? (
+            <>
+              <h1 className="pi-page-title">You&rsquo;ve Already Competed!</h1>
+              <p className="pi-page-subtitle">
+                {currentUsername ? (
+                  <>
+                    Welcome back, <strong>{currentUsername}</strong>.
+                  </>
+                ) : (
+                  "Welcome back."
+                )}{" "}
+                Here&rsquo;s the current leaderboard:
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="pi-page-title">Time&rsquo;s Up!</h1>
+              <p className="pi-page-subtitle">
+                Here&rsquo;s how you did
+                {currentUsername ? (
+                  <>
+                    , <strong>{currentUsername}</strong>
+                  </>
+                ) : (
+                  ""
+                )}{" "}
+                ({modeLabel}):
+              </p>
 
-          <div className="pi-results-grid">
-            <div className="pi-result-card pi-result-card--highlight">
-              <span className="pi-result-value">{solutionCount}</span>
-              <span className="pi-result-label">Unique Solutions Found</span>
-            </div>
-            <div className="pi-result-card">
-              <span className="pi-result-value">{hintsUsed}</span>
-              <span className="pi-result-label">Solver Hints Used</span>
-            </div>
-            <div className="pi-result-card">
-              <span className="pi-result-value">
-                {bestSolutionSeconds === null ? "—" : `${bestSolutionSeconds}s`}
-              </span>
-              <span className="pi-result-label">Best Solution Time</span>
-            </div>
-          </div>
+              <div className="pi-results-grid">
+                <div className="pi-result-card pi-result-card--highlight">
+                  <span className="pi-result-value">{solutionCount}</span>
+                  <span className="pi-result-label">Unique Solutions Found</span>
+                </div>
+                <div className="pi-result-card">
+                  <span className="pi-result-value">{hintsUsed}</span>
+                  <span className="pi-result-label">Solver Hints Used</span>
+                </div>
+                <div className="pi-result-card">
+                  <span className="pi-result-value">
+                    {bestSolutionSeconds === null ? "—" : `${bestSolutionSeconds}s`}
+                  </span>
+                  <span className="pi-result-label">Best Solution Time</span>
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="pi-leaderboard">
             <div className="pi-leaderboard-title">{modeLabel} Leaderboard</div>
@@ -595,12 +626,17 @@ export default function PiDayCompetition() {
           </div>
 
           <div className="pi-action-row">
-            <button
-              className="pi-start-btn pi-start-btn--secondary"
-              onClick={handlePlayAgain}
-            >
-              Play Again
-            </button>
+            <div className="pi-play-again-wrap">
+              <button
+                className="pi-start-btn pi-start-btn--secondary"
+                onClick={handlePlayAgain}
+              >
+                Play Again
+              </button>
+              <p className="pi-play-again-note">
+                Playing again won&apos;t count toward the leaderboard — your first attempt is already locked in.
+              </p>
+            </div>
             {isAdmin && (
               <a href="/api/competition/export" className="pi-admin-btn">
                 Export CSV

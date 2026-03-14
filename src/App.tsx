@@ -420,6 +420,7 @@ export default function App({
                 [currentDateKey]: true,
               }))
             }
+            onSolveHint={competitionMode ? onSolveHint : undefined}
           />
         </div>
         <div className="app-left-column">
