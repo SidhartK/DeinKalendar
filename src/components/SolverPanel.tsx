@@ -23,34 +23,18 @@ export interface SolverPanelRef {
 
 type SolverStatus = "idle" | "solving" | "done";
 
-function formatTime(ms: number): string {
-  const s = ms / 1000;
-  if (s < 60) return `${s.toFixed(1)}s`;
-  const m = Math.floor(s / 60);
-  const rem = Math.floor(s % 60);
-  return `${m}m ${rem}s`;
-}
-
 const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function SolverPanel(
   { targetMonth, targetDay, placedPieces, onSolveStart, onSolveHint },
   ref
 ) {
   const [status, setStatus] = useState<SolverStatus>("idle");
   const [solutionCount, setSolutionCount] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
-  const [lastCacheStates, setLastCacheStates] = useState<number | null>(null);
   const workerRef = useRef<Worker | null>(null);
-  const timerRef = useRef<number | null>(null);
-  const startTimeRef = useRef(0);
 
   const cleanup = useCallback(() => {
     if (workerRef.current) {
       workerRef.current.terminate();
       workerRef.current = null;
-    }
-    if (timerRef.current !== null) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
     }
   }, []);
 
@@ -62,13 +46,11 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
     }
     setStatus("idle");
     setSolutionCount(0);
-    setElapsed(0);
   }, [targetMonth, targetDay, placedPieces]);
 
   const handleStart = useCallback(() => {
     setStatus("solving");
     setSolutionCount(0);
-    setElapsed(0);
     if (onSolveHint) onSolveHint(placedPieces);
     if (onSolveStart) onSolveStart();
 
@@ -86,17 +68,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
           setSolutionCount(msg.count);
         } else if (msg.type === "done") {
           setSolutionCount(msg.totalCount);
-          if (typeof msg.cacheStates === "number") {
-            setLastCacheStates(msg.cacheStates);
-          } else {
-            setLastCacheStates(null);
-          }
           setStatus("done");
-          setElapsed(performance.now() - startTimeRef.current);
-          if (timerRef.current !== null) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-          }
         }
       };
 
@@ -105,12 +77,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
         cleanup();
       };
     }
-
-    startTimeRef.current = performance.now();
-
-    timerRef.current = window.setInterval(() => {
-      setElapsed(performance.now() - startTimeRef.current);
-    }, 100);
 
     const pieces = getPieces();
     const initialPlacements = placedPieces.map((pp) => {
@@ -142,10 +108,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
     if (workerRef.current) {
       workerRef.current.postMessage({ type: "stop" });
     }
-    if (timerRef.current !== null) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
     setStatus("done");
   }, []);
 
@@ -169,26 +131,11 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
       {status !== "idle" && (
         <div className="solver-results">
           <div className="solver-stat">
-            <span className="solver-label">Solutions</span>
+            <span className="solver-label"># of Solutions</span>
             <span className="solver-value">{solutionCount.toLocaleString()}</span>
           </div>
-          <div className="solver-stat">
-            <span className="solver-label">Time</span>
-            <span className="solver-value">{formatTime(elapsed)}</span>
-          </div>
-          {lastCacheStates !== null && (
-            <div className="solver-stat">
-              <span className="solver-label">Solve states seen</span>
-              <span className="solver-value">
-                {lastCacheStates.toLocaleString()}
-              </span>
-            </div>
-          )}
           {status === "solving" && (
             <div className="solver-status solving">Solving…</div>
-          )}
-          {status === "done" && (
-            <div className="solver-status done">Complete</div>
           )}
         </div>
       )}

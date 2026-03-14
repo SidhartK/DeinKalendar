@@ -90,8 +90,3 @@
   background: rgba(52, 152, 219, 0.15);
   color: #3498db;
 }
-
-.solver-status.done {
-  background: rgba(46, 204, 113, 0.15);
-  color: #2ecc71;
-}
