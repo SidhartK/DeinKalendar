@@ -335,6 +335,18 @@ export default function PiDayCompetition() {
     setCompetitionState("ready");
   }, []);
 
+  const handleEndEarly = useCallback(() => {
+    if (
+      window.confirm(
+        "End the competition now? Your current score will be submitted and you'll see the leaderboard."
+      )
+    ) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+      setCompetitionState("finished");
+    }
+  }, []);
+
   const handleSolutionFound = useCallback((placedPieces: PlacedPiece[]) => {
     const key = makeSolutionKey(placedPieces);
     if (!solutionKeysRef.current.has(key)) {
@@ -694,6 +706,16 @@ export default function PiDayCompetition() {
             <span className="pi-stat-label">
               Hints (−{getPenaltySeconds(competitionModeRef.current)}s each)
             </span>
+          </div>
+          <div className="pi-active-end-wrap">
+            <button
+              type="button"
+              className="pi-end-early-btn"
+              onClick={handleEndEarly}
+              aria-label="End competition early and submit score"
+            >
+              End early
+            </button>
           </div>
         </div>
       </div>
