@@ -14,6 +14,7 @@ import PieceTray from "./components/PieceTray";
 import DateSelector from "./components/DateSelector";
 import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import HelpHotkeys from "./components/HelpHotkeys";
+import TutorialModal from "./components/TutorialModal";
 import "./App.css";
 
 interface ReducerState {
@@ -192,6 +193,7 @@ export default function App({
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSolutionToast, setShowSolutionToast] = useState(false);
   const [solverUsedByDate, setSolverUsedByDate] = useState<Record<string, boolean>>({});
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const currentDateKey = `${targetMonth}|${targetDay}`;
   const solverUsedForCurrentDate = !!solverUsedByDate[currentDateKey];
@@ -367,6 +369,7 @@ export default function App({
 
   return (
     <div className="app">
+      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} />
       {showCelebration && (
         <div
           className="celebration-overlay"
@@ -408,6 +411,15 @@ export default function App({
       </header>
       <main className="app-main">
         <div className="app-panel app-panel--solver">
+          <button
+            type="button"
+            className="help-tutorial-trigger"
+            onClick={() => setShowTutorial(true)}
+            title="How to play"
+            aria-label="How to play"
+          >
+            ?
+          </button>
           <HelpHotkeys />
           <SolverPanel
             ref={solverRef}
