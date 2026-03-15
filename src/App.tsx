@@ -134,6 +134,10 @@ interface AppProps {
   competitionMode?: boolean;
   onSolutionFound?: (placedPieces: PlacedPiece[]) => boolean;
   onSolveHint?: (placedPieces: PlacedPiece[]) => void;
+  /** When true, open the How to Play modal once on mount (e.g. when starting Pi day challenge). */
+  openTutorialOnMount?: boolean;
+  /** Called when the user closes the tutorial if it was auto-opened via openTutorialOnMount (e.g. to start the competition timer). */
+  onInitialTutorialClose?: () => void;
 }
 
 export default function App({
@@ -142,6 +146,8 @@ export default function App({
   competitionMode = false,
   onSolutionFound,
   onSolveHint,
+  openTutorialOnMount = false,
+  onInitialTutorialClose,
 }: AppProps) {
   const pieces = useMemo(() => getPieces(), []);
   const solverRef = useRef<SolverPanelRef>(null);
@@ -195,6 +201,22 @@ export default function App({
   const [showDuplicateToast, setShowDuplicateToast] = useState(false);
   const [solverUsedByDate, setSolverUsedByDate] = useState<Record<string, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(false);
+  const tutorialWasAutoOpenedRef = useRef(false);
+
+  useEffect(() => {
+    if (openTutorialOnMount) {
+      tutorialWasAutoOpenedRef.current = true;
+      setShowTutorial(true);
+    }
+  }, [openTutorialOnMount]);
+
+  const handleTutorialClose = useCallback(() => {
+    if (tutorialWasAutoOpenedRef.current) {
+      tutorialWasAutoOpenedRef.current = false;
+      onInitialTutorialClose?.();
+    }
+    setShowTutorial(false);
+  }, [onInitialTutorialClose]);
 
   const currentDateKey = `${targetMonth}|${targetDay}`;
   const solverUsedForCurrentDate = !!solverUsedByDate[currentDateKey];
@@ -377,7 +399,7 @@ export default function App({
 
   return (
     <div className="app">
-      <TutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} />
+      <TutorialModal open={showTutorial} onClose={handleTutorialClose} />
       {showCelebration && (
         <div
           className="celebration-overlay"

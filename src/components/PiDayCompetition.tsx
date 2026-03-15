@@ -198,6 +198,9 @@ export default function PiDayCompetition() {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "submitting" | "submitted" | "error">("idle");
 
+  // When true, we auto-show the tutorial and don't start the timer until the user dismisses it
+  const [initialTutorialDismissed, setInitialTutorialDismissed] = useState(false);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hintPenaltyFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipSubmissionRef = useRef(false);
@@ -277,9 +280,9 @@ export default function PiDayCompetition() {
     };
   }, []);
 
-  // Active game timer
+  // Active game timer (starts only after user dismisses the initial How to Play modal, if shown)
   useEffect(() => {
-    if (competitionState !== "active") return;
+    if (competitionState !== "active" || !initialTutorialDismissed) return;
 
     timerRef.current = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -295,7 +298,7 @@ export default function PiDayCompetition() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [competitionState]);
+  }, [competitionState, initialTutorialDismissed]);
 
   const handleAuth = useCallback(async () => {
     const trimmed = username.trim();
@@ -358,8 +361,13 @@ export default function PiDayCompetition() {
     lastSolutionTimeRef.current = Date.now();
     setLeaderboard([]);
     setLeaderboardLoading(false);
+    setInitialTutorialDismissed(false); // Timer will start when user closes the auto-shown How to Play
     setCompetitionState("active");
   }, [competitionMode]);
+
+  const handleInitialTutorialClose = useCallback(() => {
+    setInitialTutorialDismissed(true);
+  }, []);
 
   const handlePlayAgain = useCallback(() => {
     skipSubmissionRef.current = false;
@@ -848,6 +856,8 @@ export default function PiDayCompetition() {
           competitionMode
           onSolutionFound={handleSolutionFound}
           onSolveHint={handleSolveHint}
+          openTutorialOnMount
+          onInitialTutorialClose={handleInitialTutorialClose}
         />
         <SolutionHistory
           solutions={foundSolutions}
