@@ -202,6 +202,32 @@ export async function insertSolutions(solutions: SolutionRecord[]): Promise<void
   if (error) dbError('insertSolutions', error);
 }
 
+export interface StoredSolution {
+  id: number;
+  solution_key: string;
+  placed_pieces: PlacedPieceData[];
+  competition_type: CompetitionType;
+  found_at: string;
+}
+
+interface PlacedPieceData {
+  pieceId: number;
+  row: number;
+  col: number;
+  orientationIndex: number;
+}
+
+export async function getSolutionsForUser(username: string): Promise<StoredSolution[]> {
+  const { data, error } = await supabase
+    .from(SOLUTIONS_TABLE)
+    .select('id, solution_key, placed_pieces, competition_type, found_at')
+    .eq('username', username)
+    .order('found_at', { ascending: true });
+
+  if (error) dbError('getSolutionsForUser', error);
+  return (data ?? []) as StoredSolution[];
+}
+
 export async function getAllEntries(): Promise<Entry[]> {
   const { data, error } = await supabase
     .from(ENTRIES_TABLE)

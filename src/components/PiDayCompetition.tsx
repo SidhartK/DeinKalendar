@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import App from "../App";
-import { PlacedPiece } from "../types";
+import { PlacedPiece, CellValue, GRID_ROWS, GRID_COLS, PIECE_COLORS } from "../types";
+import { createEmptyGrid, isBlocked, getTargetCells, getLabelAt } from "../utils/board";
 import { getPieceById, getSolverOrientationIndex } from "../utils/pieces";
+import { validatePlacement, placePieceOnGrid } from "../utils/validation";
 import SolutionHistory from "./SolutionHistory";
 import "./PiDayCompetition.css";
 
@@ -153,6 +155,104 @@ function formatDateTime(iso: string): string {
   } catch {
     return "—";
   }
+}
+
+function MySolutionsMiniBoard({ placedPieces, index }: { placedPieces: PlacedPiece[]; index: number }) {
+  const targetMonth = "Mar";
+  const targetDay = 14;
+
+  const grid = useMemo(() => {
+    let g = createEmptyGrid();
+    for (const pp of placedPieces) {
+      const piece = getPieceById(pp.pieceId);
+      if (!piece) continue;
+      const orientation = piece.orientations[pp.orientationIndex];
+      if (!orientation) continue;
+      const result = validatePlacement(g, orientation, pp.row, pp.col, targetMonth, targetDay);
+      if (result.valid && result.cells) {
+        g = placePieceOnGrid(g, result.cells, pp.pieceId);
+      }
+    }
+    return g;
+  }, [placedPieces]);
+
+  const targetSet = useMemo(() => {
+    const cells = getTargetCells(targetMonth, targetDay);
+    return new Set(cells.map(([r, c]) => `${r},${c}`));
+  }, []);
+
+  return (
+    <div className="pi-my-solution">
+      <div className="pi-my-solution-label">#{index + 1}</div>
+      <div className="pi-my-solution-board">
+        {Array.from({ length: GRID_ROWS }, (_, row) => (
+          <div className="pi-my-solution-row" key={row}>
+            {Array.from({ length: GRID_COLS }, (_, col) => {
+              const blocked = isBlocked(row, col);
+              const cellValue: CellValue = grid[row][col];
+              const isTarget = targetSet.has(`${row},${col}`);
+              const pieceId = typeof cellValue === "number" ? cellValue : null;
+              const label = getLabelAt(row, col);
+
+              let className = "pi-my-solution-cell";
+              if (blocked) className += " pi-my-solution-cell--blocked";
+              if (isTarget) className += " pi-my-solution-cell--target";
+
+              const style: React.CSSProperties = {};
+              if (pieceId !== null) {
+                style.backgroundColor = PIECE_COLORS[pieceId] ?? "#888";
+              }
+
+              return (
+                <div key={col} className={className} style={style}>
+                  {!blocked && isTarget && (
+                    <span className="pi-my-solution-cell-label">{label}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MySolutions({ username }: { username: string }) {
+  const [solutions, setSolutions] = useState<PlacedPiece[][] | null>(null);
+
+  useEffect(() => {
+    if (!username) return;
+    let cancelled = false;
+
+    async function fetchSolutions() {
+      try {
+        const res = await fetch(`/api/competition/solutions?username=${encodeURIComponent(username)}`);
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.solutions)) {
+          setSolutions(data.solutions.map((s: { placed_pieces: PlacedPiece[] }) => s.placed_pieces));
+        }
+      } catch (err) {
+        console.error("Failed to fetch user solutions:", err);
+      }
+    }
+
+    fetchSolutions();
+    return () => { cancelled = true; };
+  }, [username]);
+
+  if (!solutions || solutions.length === 0) return null;
+
+  return (
+    <div className="pi-my-solutions">
+      <div className="pi-my-solutions-title">Your Solutions ({solutions.length})</div>
+      <div className="pi-my-solutions-grid">
+        {solutions.map((placedPieces, i) => (
+          <MySolutionsMiniBoard key={i} placedPieces={placedPieces} index={i} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function PiDayCompetition() {
@@ -706,6 +806,8 @@ export default function PiDayCompetition() {
               </div>
             </>
           )}
+
+          {currentUsername && <MySolutions username={currentUsername} />}
 
           <div className="pi-leaderboard">
             <div className="pi-leaderboard-header">
