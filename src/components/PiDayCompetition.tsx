@@ -721,9 +721,12 @@ export default function PiDayCompetition() {
               >
                 Play Again
               </button>
-              <p className="pi-play-again-note">
-                Playing again won&apos;t count toward the leaderboard — your first attempt is already locked in.
-              </p>
+              <a
+                href="/pi-day"
+                className="pi-start-btn pi-start-btn--secondary"
+              >
+                Play Again (No Time Limit)
+              </a>
             </div>
             {isAdmin && (
               <a href="/api/competition/export" className="pi-admin-btn">
