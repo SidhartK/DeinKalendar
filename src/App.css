@@ -272,11 +272,25 @@
   transform: scale(1.05);
 }
 
+/* Mobile: help button lives between Target Date and Board */
+.help-tutorial-mobile {
+  display: none;
+}
+
 @media (max-width: 640px) {
-  .help-tutorial-trigger {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    margin: 0;
+  .app-panel--solver .help-tutorial-trigger {
+    display: none;
+  }
+
+  .help-tutorial-mobile {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
+
+  .help-tutorial-mobile .help-tutorial-trigger {
+    position: static;
+    top: auto;
+    right: auto;
   }
 }

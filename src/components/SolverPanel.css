@@ -14,16 +14,6 @@
   margin-bottom: 4px;
 }
 
-@media (max-width: 640px) {
-  .solver-panel {
-    padding-top: 16px;
-  }
-
-  .solver-panel h3 {
-    padding-right: 44px;
-  }
-}
-
 .solver-description {
   font-size: 12px;
   color: #aaa;

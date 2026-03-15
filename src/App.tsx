@@ -446,6 +446,17 @@ export default function App({
             />
           </div>
           )}
+          <div className="help-tutorial-mobile">
+            <button
+              type="button"
+              className="help-tutorial-trigger"
+              onClick={() => setShowTutorial(true)}
+              title="How to play"
+              aria-label="How to play"
+            >
+              ?
+            </button>
+          </div>
           <div className="app-panel app-panel--board">
             <Board
               grid={grid}
