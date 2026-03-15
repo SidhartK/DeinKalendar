@@ -20,23 +20,26 @@ const JAN1_SOLUTION: PlacedPiece[] = [
 const DEMO_PIECE = JAN1_SOLUTION[0];
 const FAST_FORWARD_PIECES = JAN1_SOLUTION.slice(1);
 
-// Orientation sequence: 6 → rotate → 5 → flip → 1 (the solution orientation)
-const ORIENT_SELECT = 6;
-const ORIENT_AFTER_ROTATE = 5;
+// Orientation chain: 7 → rotate → 6 → rotate → 5 → flip → 1 (solution)
+const ORIENT_SELECT = 7;
+const ORIENT_AFTER_ROT1 = 6;
+const ORIENT_AFTER_ROT2 = 5;
 const ORIENT_AFTER_FLIP = 1;
 
 // step 0:  empty board
-// step 1:  piece "selected" at orientation 6 (cursor beside it)
-// step 2:  cursor clicks piece → rotates to orientation 5
-// step 3:  "Flip" button pressed → flips to orientation 1
-// step 4:  piece placed on board
-// step 5–11: remaining 7 pieces fast-forward
-// step 12: complete / pause before loop
+// step 1:  piece selected at orientation 7, cursor pulsing
+// step 2:  cursor clicks piece → rotates to 6
+// step 3:  cursor clicks piece again → rotates to 5
+// step 4:  cursor slides down, clicks Flip button → flips to 1
+// step 5:  piece placed on board
+// step 6–12: remaining 7 pieces fast-forward
+// step 13: complete / pause before loop
 
 const CAPTIONS = [
   "Goal: leave Jan and 1 uncovered",
   "Select a piece from the tray\u2026",
   "Click to rotate",
+  "Click again to keep rotating",
   "Use Flip to mirror the piece",
   "Click the board to place it",
   "Fill in the rest of the pieces",
@@ -47,16 +50,17 @@ const CAPTIONS = [
 const STEP_DELAYS = [
   1800, // 0→1
   1400, // 1→2
-  1200, // 2→3
+  1000, // 2→3
   1200, // 3→4
-  1200, // 4→5
-  350,  // 5→6
+  1400, // 4→5
+  1200, // 5→6
   350,  // 6→7
   350,  // 7→8
   350,  // 8→9
   350,  // 9→10
   350,  // 10→11
   350,  // 11→12
+  350,  // 12→13
 ];
 
 interface TutorialModalProps {
@@ -73,9 +77,9 @@ export default function TutorialModal({ open, onClose }: TutorialModalProps) {
   }, []);
 
   const visiblePieceIds = useMemo(() => {
-    if (step < 4) return new Set<number>();
+    if (step < 5) return new Set<number>();
     const ids = new Set([DEMO_PIECE.pieceId]);
-    const ffCount = Math.min(step - 4, FAST_FORWARD_PIECES.length);
+    const ffCount = Math.min(step - 5, FAST_FORWARD_PIECES.length);
     for (let i = 0; i < ffCount; i++) {
       ids.add(FAST_FORWARD_PIECES[i].pieceId);
     }
@@ -83,8 +87,8 @@ export default function TutorialModal({ open, onClose }: TutorialModalProps) {
   }, [step]);
 
   const lastPlacedId = useMemo(() => {
-    if (step === 4) return DEMO_PIECE.pieceId;
-    if (step >= 5 && step <= 11) return FAST_FORWARD_PIECES[step - 5]?.pieceId ?? null;
+    if (step === 5) return DEMO_PIECE.pieceId;
+    if (step >= 6 && step <= 12) return FAST_FORWARD_PIECES[step - 6]?.pieceId ?? null;
     return null;
   }, [step]);
 
@@ -140,17 +144,20 @@ export default function TutorialModal({ open, onClose }: TutorialModalProps) {
 
   if (!open) return null;
 
-  const showPieceDemo = step >= 1 && step <= 3;
-  const isComplete = step >= 12;
+  const showPieceDemo = step >= 1 && step <= 4;
+  const isComplete = step >= 13;
   const caption = CAPTIONS[Math.min(step, CAPTIONS.length - 1)];
 
   const demoOrientIndex =
-    step === 1 ? ORIENT_SELECT :
-    step === 2 ? ORIENT_AFTER_ROTATE :
+    step <= 1 ? ORIENT_SELECT :
+    step === 2 ? ORIENT_AFTER_ROT1 :
+    step === 3 ? ORIENT_AFTER_ROT2 :
     ORIENT_AFTER_FLIP;
 
-  const isRotating = step === 2;
-  const isFlipping = step === 3;
+  const isRotating1 = step === 2;
+  const isRotating2 = step === 3;
+  const isFlipping = step === 4;
+  const cursorAtPiece = step >= 1 && step <= 3;
 
   return (
     <div className="tutorial-backdrop" onClick={handleBackdropClick}>
@@ -170,25 +177,38 @@ export default function TutorialModal({ open, onClose }: TutorialModalProps) {
         <div className="tutorial-body">
           {showPieceDemo && (
             <div className="tutorial-piece-demo">
-              <div className={`tutorial-piece-wrapper ${isRotating ? "rotate-click" : ""}`}>
+              <div
+                className={`tutorial-piece-wrapper ${isRotating1 || isRotating2 ? "rotate-click" : ""}`}
+                key={isRotating1 ? "r1" : isRotating2 ? "r2" : "idle"}
+              >
                 <MiniPiecePreview
                   key={demoOrientIndex}
                   pieceId={DEMO_PIECE.pieceId}
                   orientationIndex={demoOrientIndex}
                 />
-                {(step === 1 || step === 2) && (
-                  <span className={`tutorial-cursor-icon ${isRotating ? "clicking" : ""}`}>
+                {cursorAtPiece && (
+                  <span
+                    className={`tutorial-cursor-icon ${isRotating1 || isRotating2 ? "clicking" : ""}`}
+                    key={isRotating1 ? "c1" : isRotating2 ? "c2" : "c0"}
+                  >
                     <CursorSvg />
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                className={`tutorial-flip-btn ${isFlipping ? "pressed" : ""}`}
-                tabIndex={-1}
-              >
-                ↔ Flip
-              </button>
+              <div className="tutorial-flip-row">
+                <button
+                  type="button"
+                  className={`tutorial-flip-btn ${isFlipping ? "pressed" : ""}`}
+                  tabIndex={-1}
+                >
+                  ↔ Flip
+                </button>
+                {isFlipping && (
+                  <span className="tutorial-cursor-icon slide-to-flip">
+                    <CursorSvg />
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
