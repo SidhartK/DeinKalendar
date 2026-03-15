@@ -192,6 +192,10 @@ export default function PiDayCompetition() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [redirectedToLeaderboard, setRedirectedToLeaderboard] = useState(false);
 
+  // Feedback
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "submitting" | "submitted" | "error">("idle");
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hintPenaltyFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipSubmissionRef = useRef(false);
@@ -354,8 +358,30 @@ export default function PiDayCompetition() {
   const handlePlayAgain = useCallback(() => {
     skipSubmissionRef.current = false;
     setRedirectedToLeaderboard(false);
+    setFeedbackText("");
+    setFeedbackStatus("idle");
     setCompetitionState("ready");
   }, []);
+
+  const handleFeedbackSubmit = useCallback(async () => {
+    const trimmed = feedbackText.trim();
+    if (!trimmed) return;
+    setFeedbackStatus("submitting");
+    try {
+      const res = await fetch("/api/competition/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usernameRef.current || null, feedback: trimmed }),
+      });
+      if (res.ok) {
+        setFeedbackStatus("submitted");
+      } else {
+        setFeedbackStatus("error");
+      }
+    } catch {
+      setFeedbackStatus("error");
+    }
+  }, [feedbackText]);
 
   const handleEndEarly = useCallback(() => {
     if (
@@ -681,6 +707,40 @@ export default function PiDayCompetition() {
               <a href="/api/competition/export" className="pi-admin-btn">
                 Export CSV
               </a>
+            )}
+          </div>
+
+          <div className="pi-feedback">
+            <h2 className="pi-feedback-title">Share Your Thoughts</h2>
+            <p className="pi-feedback-subtitle">
+              How was the challenge? Any feedback is welcome — bugs, ideas, or just a reaction.
+            </p>
+            {feedbackStatus === "submitted" ? (
+              <p className="pi-feedback-success">Thanks for the feedback! 🎉</p>
+            ) : (
+              <>
+                <textarea
+                  className="pi-feedback-textarea"
+                  placeholder="Write your feedback here…"
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  disabled={feedbackStatus === "submitting"}
+                  maxLength={2000}
+                  rows={4}
+                />
+                {feedbackStatus === "error" && (
+                  <p className="pi-feedback-error" role="alert">
+                    Something went wrong — please try again.
+                  </p>
+                )}
+                <button
+                  className="pi-start-btn pi-start-btn--secondary pi-feedback-submit"
+                  onClick={handleFeedbackSubmit}
+                  disabled={feedbackStatus === "submitting" || !feedbackText.trim()}
+                >
+                  {feedbackStatus === "submitting" ? "Sending…" : "Send Feedback"}
+                </button>
+              </>
             )}
           </div>
         </div>

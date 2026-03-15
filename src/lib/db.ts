@@ -10,6 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const USERS_TABLE = 'pi_day_2026__users';
 const ENTRIES_TABLE = 'pi_day_2026__entries';
+const FEEDBACK_TABLE = 'pi_day_2026__feedback';
 
 // ─── Public types (unchanged contracts) ──────────────────────────────────────
 
@@ -142,6 +143,16 @@ export async function getLeaderboard(
     completed_at: row.completed_at,
     competition_type: row.competition_type as CompetitionType,
   }));
+}
+
+export async function insertFeedback(username: string | null, feedback: string): Promise<void> {
+  const { error } = await supabase.from(FEEDBACK_TABLE).insert({
+    username: username ?? null,
+    feedback,
+    submitted_at: new Date().toISOString(),
+  });
+
+  if (error) dbError('insertFeedback', error);
 }
 
 export async function getAllEntries(): Promise<Entry[]> {
