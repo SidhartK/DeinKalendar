@@ -596,7 +596,7 @@ export default function PiDayCompetition() {
               role="radio"
               aria-checked={competitionMode === "mini"}
             >
-              Mini
+              Quick
             </button>
             <button
               className={`pi-mode-btn ${competitionMode === "main" ? "pi-mode-btn--active" : ""}`}
@@ -604,12 +604,12 @@ export default function PiDayCompetition() {
               role="radio"
               aria-checked={competitionMode === "main"}
             >
-              Main
+              Regular
             </button>
           </div>
           <div className="pi-rules">
             <h2 className="pi-rules-title">
-              {competitionMode === "mini" ? "Mini" : "Main"} Rules
+              {competitionMode === "mini" ? "Quick" : "Regular"} Rules
             </h2>
             <ul className="pi-rules-list">
               <li>
@@ -631,16 +631,16 @@ export default function PiDayCompetition() {
               </li>
             </ul>
             <div className="pi-rules-note">
-              Only your <strong>first attempt</strong> (Mini or Main) is eligible
-              for its leaderboard. If you play Mini first, your Main score
-              won&apos;t appear on the Main leaderboard and vice-versa. You can
+              Only your <strong>first attempt</strong> (Quick or Regular) is eligible
+              for its leaderboard. If you play Quick first, your Regular score
+              won&apos;t appear on the Regular leaderboard and vice-versa. You can
               always replay either mode for fun.
             </div>
           </div>
           <button className="pi-start-btn" onClick={handleStart}>
             {competitionMode === "mini"
-              ? "Play Mini Competition"
-              : "Play Main Competition"}
+              ? "Play Quick Competition"
+              : "Play Regular Competition"}
           </button>
         </div>
       </div>
@@ -650,7 +650,7 @@ export default function PiDayCompetition() {
   if (competitionState === "finished") {
     const currentUsername = usernameRef.current;
     const finishedMode = competitionModeRef.current;
-    const modeLabel = finishedMode === "mini" ? "Mini" : "Main";
+    const modeLabel = finishedMode === "mini" ? "Quick" : "Regular";
     const isAdmin = getCookie("pi_admin") === "1";
 
     return (
