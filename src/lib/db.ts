@@ -11,6 +11,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const USERS_TABLE = 'pi_day_2026__users';
 const ENTRIES_TABLE = 'pi_day_2026__entries';
 const FEEDBACK_TABLE = 'pi_day_2026__feedback';
+const SOLUTIONS_TABLE = 'pi_day_2026__solutions';
 
 // ─── Public types (unchanged contracts) ──────────────────────────────────────
 
@@ -153,6 +154,28 @@ export async function insertFeedback(username: string | null, feedback: string):
   });
 
   if (error) dbError('insertFeedback', error);
+}
+
+export interface SolutionRecord {
+  username: string;
+  competition_type: CompetitionType;
+  solution_key: string;
+  placed_pieces: unknown;
+}
+
+export async function insertSolutions(solutions: SolutionRecord[]): Promise<void> {
+  if (solutions.length === 0) return;
+
+  const rows = solutions.map((s) => ({
+    username: s.username,
+    competition_type: s.competition_type,
+    solution_key: s.solution_key,
+    placed_pieces: s.placed_pieces,
+    found_at: new Date().toISOString(),
+  }));
+
+  const { error } = await supabase.from(SOLUTIONS_TABLE).insert(rows);
+  if (error) dbError('insertSolutions', error);
 }
 
 export async function getAllEntries(): Promise<Entry[]> {

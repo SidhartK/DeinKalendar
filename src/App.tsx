@@ -132,7 +132,7 @@ interface AppProps {
   initialMonth?: string;
   initialDay?: number;
   competitionMode?: boolean;
-  onSolutionFound?: (placedPieces: PlacedPiece[]) => void;
+  onSolutionFound?: (placedPieces: PlacedPiece[]) => boolean;
   onSolveHint?: (placedPieces: PlacedPiece[]) => void;
 }
 
@@ -192,6 +192,7 @@ export default function App({
   const celebratedRef = useRef(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSolutionToast, setShowSolutionToast] = useState(false);
+  const [showDuplicateToast, setShowDuplicateToast] = useState(false);
   const [solverUsedByDate, setSolverUsedByDate] = useState<Record<string, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -208,9 +209,16 @@ export default function App({
     console.log("Puzzle solved!", { targetMonth, targetDay });
 
     if (competitionMode) {
-      onSolutionFound?.(placedPieces);
-      setShowSolutionToast(true);
-      const hideToast = setTimeout(() => setShowSolutionToast(false), 2000);
+      const isNew = onSolutionFound?.(placedPieces) ?? true;
+      if (isNew) {
+        setShowSolutionToast(true);
+      } else {
+        setShowDuplicateToast(true);
+      }
+      const hideToast = setTimeout(() => {
+        setShowSolutionToast(false);
+        setShowDuplicateToast(false);
+      }, 2000);
       const clearBoard = setTimeout(() => {
         dispatch({ type: "CLEAR_BOARD" });
         celebratedRef.current = false;
@@ -401,6 +409,11 @@ export default function App({
       {showSolutionToast && (
         <div className="solution-toast" role="status" aria-live="polite">
           Solution recorded!
+        </div>
+      )}
+      {showDuplicateToast && (
+        <div className="solution-toast solution-toast--duplicate" role="status" aria-live="polite">
+          Already found this solution!
         </div>
       )}
       <header className="app-header">

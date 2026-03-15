@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import App from "../App";
 import { PlacedPiece } from "../types";
 import { getPieceById, getSolverOrientationIndex } from "../utils/pieces";
+import SolutionHistory from "./SolutionHistory";
 import "./PiDayCompetition.css";
 
 type CompetitionState = "countdown" | "username" | "ready" | "active" | "finished";
@@ -180,6 +181,7 @@ export default function PiDayCompetition() {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [bestSolutionSeconds, setBestSolutionSeconds] = useState<number | null>(null);
   const [showHintPenaltyFlash, setShowHintPenaltyFlash] = useState(false);
+  const [foundSolutions, setFoundSolutions] = useState<PlacedPiece[][]>([]);
 
   // Refs mirror the stats so async callbacks always read the latest values
   const solutionCountRef = useRef(0);
@@ -200,6 +202,7 @@ export default function PiDayCompetition() {
   const hintPenaltyFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipSubmissionRef = useRef(false);
   const solutionKeysRef = useRef(new Set<string>());
+  const foundSolutionsRef = useRef<{ key: string; placedPieces: PlacedPiece[] }[]>([]);
   const usedPuzzleKeysRef = useRef(new Set<string>());
   const totalDurationRef = useRef(DEFAULT_DURATION_SECONDS);
   const lastSolutionTimeRef = useRef<number | null>(null);
@@ -243,6 +246,7 @@ export default function PiDayCompetition() {
               best_solution_seconds: bestSolutionSecondsRef.current,
               duration_seconds: totalDurationRef.current,
               competition_type: mode,
+              solution_states: foundSolutionsRef.current,
             }),
           });
         } catch (err) {
@@ -348,6 +352,8 @@ export default function PiDayCompetition() {
     hintsUsedRef.current = 0;
     bestSolutionSecondsRef.current = null;
     solutionKeysRef.current = new Set();
+    foundSolutionsRef.current = [];
+    setFoundSolutions([]);
     usedPuzzleKeysRef.current = new Set();
     lastSolutionTimeRef.current = Date.now();
     setLeaderboard([]);
@@ -395,22 +401,30 @@ export default function PiDayCompetition() {
     }
   }, []);
 
-  const handleSolutionFound = useCallback((placedPieces: PlacedPiece[]) => {
+  const handleSolutionFound = useCallback((placedPieces: PlacedPiece[]): boolean => {
     const key = makeSolutionKey(placedPieces);
-    if (!solutionKeysRef.current.has(key)) {
-      solutionKeysRef.current.add(key);
-      const newCount = solutionKeysRef.current.size;
-      solutionCountRef.current = newCount;
-      setSolutionCount(newCount);
-
-      const now = Date.now();
-      const gapSeconds = Math.round((now - (lastSolutionTimeRef.current ?? now)) / 1000);
-      lastSolutionTimeRef.current = now;
-      const prevBest = bestSolutionSecondsRef.current;
-      const newBest = prevBest === null ? gapSeconds : Math.min(prevBest, gapSeconds);
-      bestSolutionSecondsRef.current = newBest;
-      setBestSolutionSeconds(newBest);
+    if (solutionKeysRef.current.has(key)) {
+      return false;
     }
+
+    solutionKeysRef.current.add(key);
+    const newCount = solutionKeysRef.current.size;
+    solutionCountRef.current = newCount;
+    setSolutionCount(newCount);
+
+    const snapshot = [...placedPieces];
+    foundSolutionsRef.current = [...foundSolutionsRef.current, { key, placedPieces: snapshot }];
+    setFoundSolutions((prev) => [...prev, snapshot]);
+
+    const now = Date.now();
+    const gapSeconds = Math.round((now - (lastSolutionTimeRef.current ?? now)) / 1000);
+    lastSolutionTimeRef.current = now;
+    const prevBest = bestSolutionSecondsRef.current;
+    const newBest = prevBest === null ? gapSeconds : Math.min(prevBest, gapSeconds);
+    bestSolutionSecondsRef.current = newBest;
+    setBestSolutionSeconds(newBest);
+
+    return true;
   }, []);
 
   const handleSolveHint = useCallback((placedPieces: PlacedPiece[]) => {
@@ -827,13 +841,20 @@ export default function PiDayCompetition() {
           </div>
         </div>
       </div>
-      <App
-        initialMonth="Mar"
-        initialDay={14}
-        competitionMode
-        onSolutionFound={handleSolutionFound}
-        onSolveHint={handleSolveHint}
-      />
+      <div className="pi-active-content">
+        <App
+          initialMonth="Mar"
+          initialDay={14}
+          competitionMode
+          onSolutionFound={handleSolutionFound}
+          onSolveHint={handleSolveHint}
+        />
+        <SolutionHistory
+          solutions={foundSolutions}
+          targetMonth="Mar"
+          targetDay={14}
+        />
+      </div>
     </div>
   );
 }

@@ -1,0 +1,123 @@
+.solution-history {
+  display: none;
+  flex-direction: column;
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  width: 220px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+@media (min-width: 1200px) {
+  .solution-history {
+    display: flex;
+  }
+}
+
+.solution-history-header {
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.solution-history-empty {
+  padding: 20px 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.solution-history-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  max-height: calc(5 * 172px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.solution-history-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.solution-history-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.solution-history-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.solution-history-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Mini solution card ─────────────────────────────────────── */
+
+.mini-solution {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-solution-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Mini board ─────────────────────────────────────────────── */
+
+.mini-board {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1.5px;
+  padding: 6px;
+  background: #111827;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mini-board-row {
+  display: flex;
+  gap: 1.5px;
+}
+
+.mini-cell {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  background: #16213e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-cell--blocked {
+  background: transparent;
+}
+
+.mini-cell--target {
+  box-shadow: inset 0 0 0 1.5px #f1c40f;
+  background: #2c2c1a;
+}
+
+.mini-cell-label {
+  font-size: 7px;
+  font-weight: 700;
+  color: #f1c40f;
+  pointer-events: none;
+}

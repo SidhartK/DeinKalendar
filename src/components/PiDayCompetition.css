@@ -274,6 +274,27 @@
 }
 
 /* ============================================================
+   Active state — content wrapper (App + SolutionHistory)
+   ============================================================ */
+
+.pi-active-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.pi-active-content > .app {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .pi-active-content {
+    gap: 24px;
+  }
+}
+
+/* ============================================================
    Active state — header bar
    ============================================================ */
 

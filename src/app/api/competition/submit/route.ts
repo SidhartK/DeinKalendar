@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { insertEntry, type CompetitionType } from '@/lib/db';
+import { insertEntry, insertSolutions, type CompetitionType } from '@/lib/db';
 
 const VALID_COMPETITION_TYPES = new Set<CompetitionType>(['main', 'mini']);
 
@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
     best_solution_seconds?: unknown;
     duration_seconds?: unknown;
     competition_type?: unknown;
+    solution_states?: unknown;
   };
 
   try {
@@ -35,6 +36,9 @@ export async function POST(req: NextRequest) {
     typeof body.competition_type === 'string' && VALID_COMPETITION_TYPES.has(body.competition_type as CompetitionType)
       ? (body.competition_type as CompetitionType)
       : 'main';
+  const solution_states = Array.isArray(body.solution_states)
+    ? body.solution_states
+    : [];
 
   if (!username) {
     return NextResponse.json({ error: 'username is required' }, { status: 400 });
@@ -51,6 +55,26 @@ export async function POST(req: NextRequest) {
 
   try {
     await insertEntry({ username, solutions, hints_used, best_solution_seconds, duration_seconds, competition_type });
+
+    if (solution_states.length > 0) {
+      const solutionRecords = solution_states
+        .filter(
+          (s: unknown): s is { key: string; placedPieces: unknown } =>
+            typeof s === 'object' &&
+            s !== null &&
+            typeof (s as Record<string, unknown>).key === 'string' &&
+            Array.isArray((s as Record<string, unknown>).placedPieces)
+        )
+        .map((s) => ({
+          username,
+          competition_type,
+          solution_key: s.key,
+          placed_pieces: s.placedPieces,
+        }));
+
+      await insertSolutions(solutionRecords);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('Failed to insert entry:', err);
