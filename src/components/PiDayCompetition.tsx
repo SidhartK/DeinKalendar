@@ -713,7 +713,7 @@ export default function PiDayCompetition() {
           <div className="pi-feedback">
             <h2 className="pi-feedback-title">Share Your Thoughts</h2>
             <p className="pi-feedback-subtitle">
-              How was the challenge? Any feedback is welcome — bugs, ideas, or just a reaction.
+              Please give me feedback so that I can grow from a pi into a pie. 
             </p>
             {feedbackStatus === "submitted" ? (
               <div className="pi-feedback-submitted">
