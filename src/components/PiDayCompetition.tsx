@@ -218,11 +218,11 @@ function MySolutionsMiniBoard({ placedPieces, index }: { placedPieces: PlacedPie
   );
 }
 
-function MySolutions({ username }: { username: string }) {
+function MySolutions({ username, ready }: { username: string; ready: boolean }) {
   const [solutions, setSolutions] = useState<PlacedPiece[][] | null>(null);
 
   useEffect(() => {
-    if (!username) return;
+    if (!username || !ready) return;
     let cancelled = false;
 
     async function fetchSolutions() {
@@ -239,7 +239,7 @@ function MySolutions({ username }: { username: string }) {
 
     fetchSolutions();
     return () => { cancelled = true; };
-  }, [username]);
+  }, [username, ready]);
 
   if (!solutions || solutions.length === 0) return null;
 
@@ -807,7 +807,7 @@ export default function PiDayCompetition() {
             </>
           )}
 
-          {currentUsername && <MySolutions username={currentUsername} />}
+          {currentUsername && <MySolutions username={currentUsername} ready={!leaderboardLoading} />}
 
           <div className="pi-leaderboard">
             <div className="pi-leaderboard-header">
