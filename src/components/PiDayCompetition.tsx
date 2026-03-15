@@ -716,7 +716,18 @@ export default function PiDayCompetition() {
               How was the challenge? Any feedback is welcome — bugs, ideas, or just a reaction.
             </p>
             {feedbackStatus === "submitted" ? (
-              <p className="pi-feedback-success">Thanks for the feedback! 🎉</p>
+              <div className="pi-feedback-submitted">
+                <p className="pi-feedback-success">Thanks for the feedback!</p>
+                <button
+                  className="pi-feedback-more-btn"
+                  onClick={() => {
+                    setFeedbackText("");
+                    setFeedbackStatus("idle");
+                  }}
+                >
+                  Leave more feedback
+                </button>
+              </div>
             ) : (
               <>
                 <textarea
