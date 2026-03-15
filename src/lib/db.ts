@@ -124,6 +124,7 @@ export async function getLeaderboard(
     .select('username, solutions, hints_used, best_solution_seconds, completed_at, competition_type')
     .eq('is_first_attempt', true)
     .eq('competition_type', competitionType)
+    .eq('show_on_leaderboard', true)
     .order('solutions', { ascending: false })
     .order('hints_used', { ascending: true })
     .order('best_solution_seconds', { ascending: true, nullsFirst: false });
@@ -144,6 +145,29 @@ export async function getLeaderboard(
     completed_at: row.completed_at,
     competition_type: row.competition_type as CompetitionType,
   }));
+}
+
+export async function getLeaderboardVisibility(username: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from(ENTRIES_TABLE)
+    .select('show_on_leaderboard')
+    .eq('username', username)
+    .eq('is_first_attempt', true)
+    .maybeSingle();
+
+  if (error) dbError('getLeaderboardVisibility', error);
+  // If no first-attempt entry exists, default to true
+  return data?.show_on_leaderboard ?? true;
+}
+
+export async function setLeaderboardVisibility(username: string, show: boolean): Promise<void> {
+  const { error } = await supabase
+    .from(ENTRIES_TABLE)
+    .update({ show_on_leaderboard: show })
+    .eq('username', username)
+    .eq('is_first_attempt', true);
+
+  if (error) dbError('setLeaderboardVisibility', error);
 }
 
 export async function insertFeedback(username: string | null, feedback: string): Promise<void> {

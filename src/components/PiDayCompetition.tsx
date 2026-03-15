@@ -193,6 +193,8 @@ export default function PiDayCompetition() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [redirectedToLeaderboard, setRedirectedToLeaderboard] = useState(false);
+  const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
+  const [visibilityLoading, setVisibilityLoading] = useState(false);
 
   // Feedback
   const [feedbackText, setFeedbackText] = useState("");
@@ -252,8 +254,21 @@ export default function PiDayCompetition() {
               solution_states: foundSolutionsRef.current,
             }),
           });
+          setShowOnLeaderboard(true);
         } catch (err) {
           console.error("Failed to submit results:", err);
+        }
+      }
+
+      if (usernameRef.current && skipSubmissionRef.current) {
+        try {
+          const visRes = await fetch(
+            `/api/competition/leaderboard-visibility?username=${encodeURIComponent(usernameRef.current)}`
+          );
+          const visData = await visRes.json();
+          setShowOnLeaderboard(visData.show_on_leaderboard ?? true);
+        } catch (err) {
+          console.error("Failed to fetch leaderboard visibility:", err);
         }
       }
 
@@ -396,6 +411,31 @@ export default function PiDayCompetition() {
       setFeedbackStatus("error");
     }
   }, [feedbackText]);
+
+  const handleVisibilityToggle = useCallback(async () => {
+    const newValue = !showOnLeaderboard;
+    setVisibilityLoading(true);
+    try {
+      await fetch("/api/competition/leaderboard-visibility", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: usernameRef.current,
+          show_on_leaderboard: newValue,
+        }),
+      });
+      setShowOnLeaderboard(newValue);
+      // Refresh leaderboard to reflect the change
+      const mode = competitionModeRef.current;
+      const res = await fetch(`/api/competition/leaderboard?mode=${mode}`);
+      const data = await res.json();
+      setLeaderboard(data.leaderboard ?? []);
+    } catch (err) {
+      console.error("Failed to update leaderboard visibility:", err);
+    } finally {
+      setVisibilityLoading(false);
+    }
+  }, [showOnLeaderboard]);
 
   const handleEndEarly = useCallback(() => {
     if (
@@ -668,7 +708,24 @@ export default function PiDayCompetition() {
           )}
 
           <div className="pi-leaderboard">
-            <div className="pi-leaderboard-title">{modeLabel} Leaderboard</div>
+            <div className="pi-leaderboard-header">
+              <div className="pi-leaderboard-title">{modeLabel} Leaderboard</div>
+              {currentUsername && (
+                <label className="pi-visibility-toggle">
+                  <input
+                    type="checkbox"
+                    className="pi-visibility-toggle-input"
+                    checked={showOnLeaderboard}
+                    onChange={handleVisibilityToggle}
+                    disabled={visibilityLoading}
+                  />
+                  <span className="pi-visibility-toggle-track" aria-hidden />
+                  <span className="pi-visibility-toggle-label">
+                    {showOnLeaderboard ? "Shown on leaderboard" : "Hidden from leaderboard"}
+                  </span>
+                </label>
+              )}
+            </div>
             {leaderboardLoading ? (
               <p className="pi-leaderboard-empty">Loading…</p>
             ) : leaderboard.length === 0 ? (
