@@ -292,6 +292,10 @@ export default function PiDayCompetition() {
   // Finished screen
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardViewMode, setLeaderboardViewMode] = useState<CompetitionMode>("main");
+  const [altLeaderboard, setAltLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [altLeaderboardLoading, setAltLeaderboardLoading] = useState(false);
+  const altLeaderboardLoadedRef = useRef(false);
   const [redirectedToLeaderboard, setRedirectedToLeaderboard] = useState(false);
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
   const [visibilityLoading, setVisibilityLoading] = useState(false);
@@ -337,6 +341,10 @@ export default function PiDayCompetition() {
     setLeaderboardLoading(true);
 
     const mode = competitionModeRef.current;
+    setLeaderboardViewMode(mode);
+    altLeaderboardLoadedRef.current = false;
+    setAltLeaderboard([]);
+    setAltLeaderboardLoading(false);
 
     async function submitAndFetch() {
       if (usernameRef.current && !skipSubmissionRef.current) {
@@ -536,6 +544,25 @@ export default function PiDayCompetition() {
       setVisibilityLoading(false);
     }
   }, [showOnLeaderboard]);
+
+  const handleLeaderboardTabSwitch = useCallback(async (newMode: CompetitionMode) => {
+    if (newMode === leaderboardViewMode) return;
+    setLeaderboardViewMode(newMode);
+    const finishedMode = competitionModeRef.current;
+    if (newMode !== finishedMode && !altLeaderboardLoadedRef.current) {
+      setAltLeaderboardLoading(true);
+      try {
+        const res = await fetch(`/api/competition/leaderboard?mode=${newMode}`);
+        const data = await res.json();
+        setAltLeaderboard(data.leaderboard ?? []);
+        altLeaderboardLoadedRef.current = true;
+      } catch (err) {
+        console.error("Failed to fetch leaderboard:", err);
+      } finally {
+        setAltLeaderboardLoading(false);
+      }
+    }
+  }, [leaderboardViewMode]);
 
   const handleEndEarly = useCallback(() => {
     if (
@@ -753,6 +780,10 @@ export default function PiDayCompetition() {
     const modeLabel = finishedMode === "mini" ? "Quick" : "Regular";
     const isAdmin = getCookie("pi_admin") === "1";
 
+    const isViewingFinishedMode = leaderboardViewMode === finishedMode;
+    const displayedLeaderboard = isViewingFinishedMode ? leaderboard : altLeaderboard;
+    const displayedLoading = isViewingFinishedMode ? leaderboardLoading : altLeaderboardLoading;
+
     return (
       <div className="pi-competition pi-competition--finished">
         <div className="pi-finished-page">
@@ -811,8 +842,21 @@ export default function PiDayCompetition() {
 
           <div className="pi-leaderboard">
             <div className="pi-leaderboard-header">
-              <div className="pi-leaderboard-title">{modeLabel} Leaderboard</div>
-              {currentUsername && (
+              <div className="pi-leaderboard-tabs">
+                <button
+                  className={`pi-lb-tab${leaderboardViewMode === "main" ? " pi-lb-tab--active" : ""}`}
+                  onClick={() => handleLeaderboardTabSwitch("main")}
+                >
+                  Regular
+                </button>
+                <button
+                  className={`pi-lb-tab${leaderboardViewMode === "mini" ? " pi-lb-tab--active" : ""}`}
+                  onClick={() => handleLeaderboardTabSwitch("mini")}
+                >
+                  Quick
+                </button>
+              </div>
+              {currentUsername && isViewingFinishedMode && (
                 <label className="pi-visibility-toggle">
                   <input
                     type="checkbox"
@@ -828,9 +872,9 @@ export default function PiDayCompetition() {
                 </label>
               )}
             </div>
-            {leaderboardLoading ? (
+            {displayedLoading ? (
               <p className="pi-leaderboard-empty">Loading…</p>
-            ) : leaderboard.length === 0 ? (
+            ) : displayedLeaderboard.length === 0 ? (
               <p className="pi-leaderboard-empty">No entries yet.</p>
             ) : (
               <div className="pi-leaderboard-scroll">
@@ -846,7 +890,7 @@ export default function PiDayCompetition() {
                     </tr>
                   </thead>
                   <tbody>
-                    {leaderboard.map((row) => (
+                    {displayedLeaderboard.map((row) => (
                       <tr
                         key={row.username}
                         className={row.username === currentUsername ? "pi-lb-me" : ""}
