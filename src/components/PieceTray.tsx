@@ -1,8 +1,13 @@
-"use client";
+ "use client";
 
 import { useEffect, useCallback } from "react";
 import { PieceDefinition, PIECE_COLORS } from "../types";
-import { rotateOrientation90CW, flipOrientationIndex } from "../utils/pieces";
+import {
+  rotateOrientation90CW,
+  rotateOrientation90CCW,
+  flipOrientationIndex,
+  flipOrientationVertically,
+} from "../utils/pieces";
 import PiecePreview from "./PiecePreview";
 import "./PieceTray.css";
 
@@ -41,6 +46,11 @@ export default function PieceTray({
     onSetOrientation(flipOrientationIndex(selectedOrientation));
   }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
+  const flipVertical = useCallback(() => {
+    if (!selectedPiece) return;
+    onSetOrientation(flipOrientationVertically(selectedOrientation));
+  }, [selectedPiece, selectedOrientation, onSetOrientation]);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
@@ -51,12 +61,19 @@ export default function PieceTray({
           e.preventDefault();
           onSelectPiece(piece.id === selectedPieceId ? null : piece.id);
         }
-      } else if (e.key === "r" || e.key === "R") {
+      } else if (e.key === "r" || e.key === "R" || e.key === "ArrowRight") {
         e.preventDefault();
         rotateForward();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        if (!selectedPiece) return;
+        onSetOrientation(rotateOrientation90CCW(selectedOrientation));
       } else if (e.key === "e" || e.key === "E") {
         e.preventDefault();
         flip();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        flipVertical();
       } else if (e.key === "Escape") {
         e.preventDefault();
         onSelectPiece(null);
