@@ -21,7 +21,7 @@ interface BoardProps {
   selectedPiece: PieceDefinition | null;
   selectedOrientation: number;
   onPlacePiece: (row: number, col: number) => void;
-  onPickUpPiece: (pieceId: number) => void;
+  onPickUpPiece: (pieceId: number, row: number, col: number) => void;
 }
 
 export default function Board({
@@ -82,7 +82,7 @@ export default function Board({
       const cellValue = grid[row]?.[col];
 
       if (typeof cellValue === "number") {
-        onPickUpPiece(cellValue);
+        onPickUpPiece(cellValue, row, col);
         return;
       }
 

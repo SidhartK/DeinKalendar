@@ -23,6 +23,7 @@ interface ReducerState {
   targetDay: number;
   selectedPieceId: number | null;
   selectedOrientation: number;
+  selectedAnchorCellId: number | null;
   removedByWStack: PlacedPiece[];
 }
 
@@ -33,6 +34,7 @@ function getInitialState(initialMonth: string, initialDay: number): ReducerState
     targetDay: initialDay,
     selectedPieceId: null,
     selectedOrientation: 0,
+    selectedAnchorCellId: null,
     removedByWStack: [],
   };
 }
@@ -46,6 +48,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [],
         selectedPieceId: null,
         selectedOrientation: 0,
+        selectedAnchorCellId: null,
         removedByWStack: [],
       };
     case "SET_TARGET_DAY":
@@ -55,6 +58,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [],
         selectedPieceId: null,
         selectedOrientation: 0,
+        selectedAnchorCellId: null,
         removedByWStack: [],
       };
     case "SELECT_PIECE":
@@ -62,6 +66,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         ...state,
         selectedPieceId: action.pieceId,
         selectedOrientation: 0,
+        selectedAnchorCellId: null,
       };
     case "SET_ORIENTATION":
       return {
@@ -74,6 +79,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [...state.placedPieces, action.piece],
         selectedPieceId: null,
         selectedOrientation: 0,
+        selectedAnchorCellId: null,
         removedByWStack: [],
       };
     case "REMOVE_PIECE":
@@ -95,6 +101,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         ),
         selectedPieceId: action.pieceId,
         selectedOrientation: placed.orientationIndex,
+        selectedAnchorCellId: null,
       };
     }
     case "REMOVE_LAST_PIECE": {
@@ -105,6 +112,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: state.placedPieces.slice(0, -1),
         selectedPieceId: null,
         selectedOrientation: 0,
+        selectedAnchorCellId: null,
         removedByWStack: [...state.removedByWStack, last],
       };
     }
@@ -123,6 +131,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         placedPieces: [],
         selectedPieceId: null,
         selectedOrientation: 0,
+        selectedAnchorCellId: null,
         removedByWStack: [],
       };
   }
@@ -360,8 +369,8 @@ export default function App({
     []
   );
 
-  const handlePickUpPiece = useCallback((pieceId: number) => {
-    dispatch({ type: "PICK_UP_PIECE", pieceId });
+  const handlePickUpPiece = useCallback((pieceId: number, row: number, col: number) => {
+    dispatch({ type: "PICK_UP_PIECE", pieceId, row, col });
   }, []);
 
   const handleRemoveLastPiece = useCallback(() => {
