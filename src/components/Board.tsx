@@ -20,6 +20,7 @@ interface BoardProps {
   targetDay: number;
   selectedPiece: PieceDefinition | null;
   selectedOrientation: number;
+  selectedAnchorCoord: Coord | null;
   onPlacePiece: (row: number, col: number) => void;
   onPickUpPiece: (pieceId: number, row: number, col: number) => void;
 }
@@ -30,6 +31,7 @@ export default function Board({
   targetDay,
   selectedPiece,
   selectedOrientation,
+  selectedAnchorCoord,
   onPlacePiece,
   onPickUpPiece,
 }: BoardProps) {
@@ -41,32 +43,40 @@ export default function Board({
   }, [targetMonth, targetDay]);
 
   const preview = useMemo(() => {
-    if (!selectedPiece || !hoverCell) return null;
+    if (!selectedPiece || !hoverCell || !selectedAnchorCoord) return null;
     const orientation = selectedPiece.orientations[selectedOrientation];
     if (!orientation) return null;
 
-    const [baseR, baseC] = orientation.cells[0];
-    const anchorRow = hoverCell[0] - baseR;
-    const anchorCol = hoverCell[1] - baseC;
+    const [baseR, baseC] = selectedAnchorCoord;
+    const placementRow = hoverCell[0] - baseR;
+    const placementCol = hoverCell[1] - baseC;
 
     const result = validatePlacement(
       grid,
       orientation,
-      anchorRow,
-      anchorCol,
+      placementRow,
+      placementCol,
       targetMonth,
       targetDay
     );
 
-    const cells = getAbsoluteCells(orientation, anchorRow, anchorCol);
+    const cells = getAbsoluteCells(orientation, placementRow, placementCol);
     return {
       cells,
       valid: result.valid,
       color: PIECE_COLORS[selectedPiece.id] ?? "#888",
-      anchorRow,
-      anchorCol,
+      placementRow,
+      placementCol,
     };
-  }, [selectedPiece, selectedOrientation, hoverCell, grid, targetMonth, targetDay]);
+  }, [
+    selectedPiece,
+    selectedOrientation,
+    selectedAnchorCoord,
+    hoverCell,
+    grid,
+    targetMonth,
+    targetDay,
+  ]);
 
   const previewSet = useMemo(() => {
     if (!preview) return new Map<string, { valid: boolean; color: string }>();
@@ -87,7 +97,7 @@ export default function Board({
       }
 
       if (selectedPiece && preview?.valid) {
-        onPlacePiece(preview.anchorRow, preview.anchorCol);
+        onPlacePiece(row, col);
       }
     },
     [grid, selectedPiece, preview, onPlacePiece, onPickUpPiece]
@@ -106,14 +116,14 @@ export default function Board({
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
       if (e.key === " ") {
         e.preventDefault();
-        if (selectedPiece && preview?.valid) {
-          onPlacePiece(preview.anchorRow, preview.anchorCol);
+        if (selectedPiece && preview?.valid && hoverCell) {
+          onPlacePiece(hoverCell[0], hoverCell[1]);
         }
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedPiece, preview, onPlacePiece]);
+  }, [selectedPiece, preview, hoverCell, onPlacePiece]);
 
   return (
     <div className="board" onMouseLeave={handleMouseLeave}>

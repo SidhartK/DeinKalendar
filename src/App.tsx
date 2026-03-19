@@ -2,9 +2,9 @@
 
 import { useReducer, useMemo, useCallback, useRef, useEffect, useState } from "react";
 import confetti from "canvas-confetti";
-import { PlacedPiece, GameAction } from "./types";
+import { Coord, PlacedPiece, GameAction } from "./types";
 import { createEmptyGrid, isBoardComplete } from "./utils/board";
-import { getPieces, getPieceById } from "./utils/pieces";
+import { getPieces, getPieceById, getAnchorCoord } from "./utils/pieces";
 import {
   validatePlacement,
   placePieceOnGrid,
@@ -180,6 +180,7 @@ export default function App({
     targetDay,
     selectedPieceId,
     selectedOrientation,
+    selectedAnchorCellId,
   } = state;
 
   const grid = useMemo(() => {
@@ -328,6 +329,15 @@ export default function App({
   const selectedPiece =
     selectedPieceId != null ? getPieceById(selectedPieceId) ?? null : null;
 
+  const selectedAnchorCoord = useMemo<Coord | null>(() => {
+    if (!selectedPiece) return null;
+    if (selectedAnchorCellId == null) {
+      const orientation = selectedPiece.orientations[selectedOrientation];
+      return orientation?.cells[0] ?? [0, 0];
+    }
+    return getAnchorCoord(selectedPiece, selectedOrientation, selectedAnchorCellId);
+  }, [selectedPiece, selectedOrientation, selectedAnchorCellId]);
+
   const handleSelectPiece = useCallback(
     (id: number | null) => {
       dispatch({ type: "SELECT_PIECE", pieceId: id });
@@ -344,15 +354,18 @@ export default function App({
 
   const handlePlacePiece = useCallback(
     (row: number, col: number) => {
-      if (!selectedPiece) return;
+      if (!selectedPiece || !selectedAnchorCoord) return;
       const orientation = selectedPiece.orientations[selectedOrientation];
       if (!orientation) return;
+      const [anchorR, anchorC] = selectedAnchorCoord;
+      const placementRow = row - anchorR;
+      const placementCol = col - anchorC;
 
       const result = validatePlacement(
         grid,
         orientation,
-        row,
-        col,
+        placementRow,
+        placementCol,
         targetMonth,
         targetDay
       );
@@ -362,13 +375,20 @@ export default function App({
         type: "PLACE_PIECE",
         piece: {
           pieceId: selectedPiece.id,
-          row,
-          col,
+          row: placementRow,
+          col: placementCol,
           orientationIndex: selectedOrientation,
         },
       });
     },
-    [selectedPiece, selectedOrientation, grid, targetMonth, targetDay]
+    [
+      selectedPiece,
+      selectedOrientation,
+      selectedAnchorCoord,
+      grid,
+      targetMonth,
+      targetDay,
+    ]
   );
 
   const handleRemovePiece = useCallback(
@@ -517,6 +537,7 @@ export default function App({
               targetDay={targetDay}
               selectedPiece={selectedPiece ?? null}
               selectedOrientation={selectedOrientation}
+              selectedAnchorCoord={selectedAnchorCoord}
               onPlacePiece={handlePlacePiece}
               onPickUpPiece={handlePickUpPiece}
             />
