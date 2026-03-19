@@ -4,7 +4,12 @@ import { useReducer, useMemo, useCallback, useRef, useEffect, useState } from "r
 import confetti from "canvas-confetti";
 import { Coord, PlacedPiece, GameAction } from "./types";
 import { createEmptyGrid, isBoardComplete } from "./utils/board";
-import { getPieces, getPieceById, getAnchorCoord } from "./utils/pieces";
+import {
+  getPieces,
+  getPieceById,
+  getAnchorCoord,
+  getNormalizedTransformedCellsWithIds,
+} from "./utils/pieces";
 import {
   validatePlacement,
   placePieceOnGrid,
@@ -62,12 +67,27 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         removedByWStack: [],
       };
     case "SELECT_PIECE":
-      return {
-        ...state,
-        selectedPieceId: action.pieceId,
-        selectedOrientation: 0,
-        selectedAnchorCellId: null,
-      };
+      if (action.pieceId == null) {
+        return {
+          ...state,
+          selectedPieceId: null,
+          selectedOrientation: 0,
+          selectedAnchorCellId: null,
+        };
+      }
+      {
+        const piece = getPieceById(action.pieceId);
+        const defaultAnchorCellId =
+          piece != null
+            ? getNormalizedTransformedCellsWithIds(piece, 0)[0]?.id ?? null
+            : null;
+        return {
+          ...state,
+          selectedPieceId: action.pieceId,
+          selectedOrientation: 0,
+          selectedAnchorCellId: defaultAnchorCellId,
+        };
+      }
     case "SET_ORIENTATION":
       return {
         ...state,
@@ -96,12 +116,23 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
       if (!placed) return state;
       const piece = getPieceById(action.pieceId);
       const orientation = piece?.orientations[placed.orientationIndex];
-      if (!orientation) return state;
+      if (!piece || !orientation) return state;
 
       const clickedCellBelongsToPiece = orientation.cells.some(
         ([r, c]) => placed.row + r === action.row && placed.col + c === action.col
       );
       if (!clickedCellBelongsToPiece) return state;
+
+      const localRow = action.row - placed.row;
+      const localCol = action.col - placed.col;
+      const transformedCells = getNormalizedTransformedCellsWithIds(
+        piece,
+        placed.orientationIndex
+      );
+      const selectedAnchorCellId =
+        transformedCells.find(
+          ({ r, c }) => r === localRow && c === localCol
+        )?.id ?? transformedCells[0]?.id ?? null;
 
       return {
         ...state,
@@ -110,7 +141,7 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         ),
         selectedPieceId: action.pieceId,
         selectedOrientation: placed.orientationIndex,
-        selectedAnchorCellId: null,
+        selectedAnchorCellId,
       };
     }
     case "REMOVE_LAST_PIECE": {
