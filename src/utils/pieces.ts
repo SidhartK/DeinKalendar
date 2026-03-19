@@ -44,9 +44,18 @@ export function rotateOrientation90CW(index: number): number {
   return ((index - 1) % 4 + 4) % 8;
 }
 
+export function rotateOrientation90CCW(index: number): number {
+  return rotateOrientation90CW(rotateOrientation90CW(rotateOrientation90CW(index)));
+}
+
 /** Given orientation index 0–7, return the flipped orientation index. */
 export function flipOrientationIndex(index: number): number {
   return (index + 4) % 8;
+}
+
+export function flipOrientationVertically(index: number): number {
+  // flip horizontally and then rotate 90° CCW twice
+  return rotateOrientation90CW(rotateOrientation90CW(flipOrientationIndex(index)));
 }
 
 export function getUniqueOrientations(piece: PieceDefinition): Orientation[] {
