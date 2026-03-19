@@ -94,6 +94,15 @@ function gameReducer(state: ReducerState, action: GameAction): ReducerState {
         (pp) => pp.pieceId === action.pieceId
       );
       if (!placed) return state;
+      const piece = getPieceById(action.pieceId);
+      const orientation = piece?.orientations[placed.orientationIndex];
+      if (!orientation) return state;
+
+      const clickedCellBelongsToPiece = orientation.cells.some(
+        ([r, c]) => placed.row + r === action.row && placed.col + c === action.col
+      );
+      if (!clickedCellBelongsToPiece) return state;
+
       return {
         ...state,
         placedPieces: state.placedPieces.filter(
