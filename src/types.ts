@@ -15,6 +15,7 @@ export interface Orientation {
 export interface PieceDefinition {
   id: number;
   name: string;
+  baseCells: Coord[];
   orientations: Orientation[];
 }
 

@@ -38,6 +38,88 @@ function coordsKey(cells: Coord[]): string {
   return norm.map(([r, c]) => `${r},${c}`).join("|");
 }
 
+type CellWithId = {
+  id: number;
+  r: number;
+  c: number;
+};
+
+function normalizeWithIds(cells: CellWithId[]): CellWithId[] {
+  if (cells.length === 0) return [];
+
+  const minR = Math.min(...cells.map(({ r }) => r));
+  const minC = Math.min(...cells.map(({ c }) => c));
+
+  return cells
+    .map(({ id, r, c }) => ({ id, r: r - minR, c: c - minC }))
+    .sort((a, b) => a.r - b.r || a.c - b.c);
+}
+
+function rotateCoord90(coord: Coord): Coord {
+  const [r, c] = coord;
+  return [c, -r];
+}
+
+function rotateCoord270(coord: Coord): Coord {
+  const [r, c] = coord;
+  return [-c, r];
+}
+
+function flipCoordHorizontal(coord: Coord): Coord {
+  const [r, c] = coord;
+  return [r, -c];
+}
+
+export function transformCoordForOrientation(
+  coord: Coord,
+  uiOrientationIndex: number
+): Coord {
+  if (uiOrientationIndex < 0 || uiOrientationIndex > 7) {
+    return coord;
+  }
+
+  let transformed: Coord = coord;
+
+  if (uiOrientationIndex < 4) {
+    for (let i = 0; i < uiOrientationIndex; i++) {
+      transformed = rotateCoord90(transformed);
+    }
+    return transformed;
+  }
+
+  transformed = flipCoordHorizontal(transformed);
+  for (let i = 0; i < uiOrientationIndex - 4; i++) {
+    transformed = rotateCoord270(transformed);
+  }
+  return transformed;
+}
+
+export function getNormalizedTransformedCellsWithIds(
+  piece: PieceDefinition,
+  uiOrientationIndex: number
+): CellWithId[] {
+  const transformed = piece.baseCells.map((coord, id) => {
+    const [r, c] = transformCoordForOrientation(coord, uiOrientationIndex);
+    return { id, r, c };
+  });
+  return normalizeWithIds(transformed);
+}
+
+export function getAnchorCoord(
+  piece: PieceDefinition,
+  uiOrientationIndex: number,
+  anchorId: number
+): Coord {
+  const transformed = getNormalizedTransformedCellsWithIds(piece, uiOrientationIndex);
+  const anchor = transformed.find((cell) => cell.id === anchorId);
+  if (anchor) {
+    return [anchor.r, anchor.c];
+  }
+
+  const fallback = transformed[0];
+  return fallback ? [fallback.r, fallback.c] : [0, 0];
+}
+
 /** Given orientation index 0–7, return the next index after rotating 90° CW. */
 export function rotateOrientation90CW(index: number): number {
   if (index < 4) return (index + 1) % 4;
@@ -127,6 +209,7 @@ export function loadPieces(): PieceDefinition[] {
     return {
       id: p.id,
       name: p.name,
+      baseCells,
       orientations: generateOrientations(baseCells),
     };
   });
