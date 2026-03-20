@@ -7,9 +7,11 @@ const HOTKEYS = [
   { key: "1–8", action: "Select piece" },
   { key: "R", action: "Rotate selected piece" },
   { key: "E", action: "Flip selected piece" },
-  { key: "Esc", action: "Deselect" },
+  {
+    key: "Q",
+    action: "Deselect (if holding a piece) or remove last piece",
+  },
   { key: "Space", action: "Place piece (when valid)" },
-  { key: "Q", action: "Remove last piece" },
   { key: "W", action: "Undo last removal" },
   { key: "H", action: "Hint" },
 ];

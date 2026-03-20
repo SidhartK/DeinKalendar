@@ -74,12 +74,13 @@ export default function PieceTray({
       } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         e.preventDefault();
         flipVertical();
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        onSelectPiece(null);
       } else if (e.key === "q" || e.key === "Q") {
         e.preventDefault();
-        onRemoveLastPiece();
+        if (selectedPieceId != null) {
+          onSelectPiece(null);
+        } else {
+          onRemoveLastPiece();
+        }
       } else if (e.key === "w" || e.key === "W") {
         e.preventDefault();
         onRestoreLastRemoved();
@@ -100,10 +101,10 @@ export default function PieceTray({
           type="button"
           className="control-btn deselect-btn"
           onClick={() => onSelectPiece(null)}
-          title="Deselect"
+          title="Deselect (Q)"
           disabled={!selectedPieceId}
         >
-          Deselect (Esc)
+          Deselect (Q)
         </button>
       </div>
 
