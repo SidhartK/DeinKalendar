@@ -23,6 +23,8 @@ interface BoardProps {
   selectedAnchorCoord: Coord | null;
   onPlacePiece: (row: number, col: number) => void;
   onPickUpPiece: (pieceId: number, row: number, col: number) => void;
+  /** Keys `${row},${col}` for empty cells forced to one (piece, orientation) after a hint. */
+  forcedHintCells?: Set<string>;
 }
 
 export default function Board({
@@ -34,6 +36,7 @@ export default function Board({
   selectedAnchorCoord,
   onPlacePiece,
   onPickUpPiece,
+  forcedHintCells,
 }: BoardProps) {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
 
@@ -136,11 +139,14 @@ export default function Board({
             const isTarget = targetSet.has(`${row},${col}`);
             const pieceId = typeof cellValue === "number" ? cellValue : null;
             const previewInfo = previewSet.get(`${row},${col}`);
+            const forcedHint =
+              forcedHintCells?.has(`${row},${col}`) ?? false;
 
             let className = "board-cell";
             if (blocked) className += " blocked";
             if (isTarget) className += " target";
             if (pieceId !== null) className += " occupied";
+            if (forcedHint) className += " forced-hint";
             if (previewInfo) {
               className += previewInfo.valid ? " preview-valid" : " preview-invalid";
             }
