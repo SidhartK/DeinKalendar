@@ -146,7 +146,8 @@ export default function Board({
             if (blocked) className += " blocked";
             if (isTarget) className += " target";
             if (pieceId !== null) className += " occupied";
-            if (forcedHint) className += " forced-hint";
+            // Placement preview must win over forced-hint (gradient/box-shadow would mask faded fill).
+            if (forcedHint && !previewInfo) className += " forced-hint";
             if (previewInfo) {
               className += previewInfo.valid ? " preview-valid" : " preview-invalid";
             }
