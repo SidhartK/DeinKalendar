@@ -9,12 +9,16 @@ import {
 } from "../utils/pieces";
 import "./SolverPanel.css";
 
+export type ForcedCellCoord = { r: number; c: number };
+
 interface SolverPanelProps {
   targetMonth: string;
   targetDay: number;
   placedPieces: PlacedPiece[];
   onSolveStart?: () => void;
   onSolveHint?: (placedPieces: PlacedPiece[]) => void;
+  /** Called when a hint finishes with cells that have exactly one (piece, orientation) across all solutions. */
+  onForcedCells?: (cells: ForcedCellCoord[]) => void;
 }
 
 export interface SolverPanelRef {
@@ -24,12 +28,14 @@ export interface SolverPanelRef {
 type SolverStatus = "idle" | "solving" | "done";
 
 const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function SolverPanel(
-  { targetMonth, targetDay, placedPieces, onSolveStart, onSolveHint },
+  { targetMonth, targetDay, placedPieces, onSolveStart, onSolveHint, onForcedCells },
   ref
 ) {
   const [status, setStatus] = useState<SolverStatus>("idle");
   const [solutionCount, setSolutionCount] = useState(0);
   const workerRef = useRef<Worker | null>(null);
+  const onForcedCellsRef = useRef(onForcedCells);
+  onForcedCellsRef.current = onForcedCells;
 
   const cleanup = useCallback(() => {
     if (workerRef.current) {
@@ -63,12 +69,20 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
       workerRef.current = worker;
 
       worker.onmessage = (e) => {
-        const msg = e.data;
+        const msg = e.data as {
+          type: string;
+          count?: number;
+          totalCount?: number;
+          singletonCells?: ForcedCellCoord[];
+        };
         if (msg.type === "progress") {
-          setSolutionCount(msg.count);
+          setSolutionCount(msg.count ?? 0);
         } else if (msg.type === "done") {
-          setSolutionCount(msg.totalCount);
+          setSolutionCount(msg.totalCount ?? 0);
           setStatus("done");
+          if (Array.isArray(msg.singletonCells)) {
+            onForcedCellsRef.current?.(msg.singletonCells);
+          }
         }
       };
 
@@ -97,6 +111,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(function Solver
         orientations: getUniqueOrientations(p).map((o) => ({ cells: o.cells })),
       })),
       initialPlacements,
+      collectCellPairSets: true,
     });
   }, [targetMonth, targetDay, placedPieces, cleanup, onSolveStart, onSolveHint]);
 
