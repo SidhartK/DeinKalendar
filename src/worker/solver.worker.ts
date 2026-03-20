@@ -54,6 +54,13 @@ interface InitialPlacement {
   orientationIndex: number;
 }
 
+interface StackPlacement {
+  pi: number;
+  oi: number;
+  anchorR: number;
+  anchorC: number;
+}
+
 type StateCache = Map<string, number>;
 type GoalCache = Map<string, StateCache>;
 const globalCache = new Map<string, GoalCache>();
@@ -120,7 +127,8 @@ self.addEventListener("message", (e: MessageEvent) => {
       pieces,
       initialPlacements,
       cache,
-      statesForDate
+      statesForDate,
+      Boolean(msg.collectCellPairSets)
     );
   }
 });
@@ -131,10 +139,64 @@ function runSolver(
   pieces: SolverPiece[],
   initialPlacements: InitialPlacement[],
   cache: StateCache,
-  statesForDate: number
+  statesForDate: number,
+  collectCellPairSets: boolean
 ) {
   const targets = getTargetCells(targetMonth, targetDay);
   const targetSet = new Set(targets.map(([r, c]) => `${r},${c}`));
+
+  const pairSets: Set<string>[][] | null = collectCellPairSets
+    ? Array.from({ length: GRID_ROWS }, () =>
+        Array.from({ length: GRID_COLS }, () => new Set<string>())
+      )
+    : null;
+
+  const placementStack: StackPlacement[] = [];
+
+  function sendDone(totalCount: number): void {
+    if (collectCellPairSets && pairSets) {
+      const singletonCells: { r: number; c: number }[] = [];
+      if (!cancelled) {
+        for (let r = 0; r < GRID_ROWS; r++) {
+          for (let c = 0; c < GRID_COLS; c++) {
+            if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
+            if (pairSets[r][c].size === 1) {
+              singletonCells.push({ r, c });
+            }
+          }
+        }
+      }
+      sendMessage({
+        type: "done",
+        totalCount,
+        cacheStates: statesForDate,
+        singletonCells,
+      });
+    } else {
+      sendMessage({
+        type: "done",
+        totalCount,
+        cacheStates: statesForDate,
+      });
+    }
+  }
+
+  function recordLeafPairSets(): void {
+    if (!collectCellPairSets || !pairSets) return;
+    for (const pl of placementStack) {
+      const piece = pieces[pl.pi];
+      const orient = piece.orientations[pl.oi];
+      if (!orient) continue;
+      const pairKey = `${pl.pi},${pl.oi}`;
+      for (const [dr, dc] of orient.cells) {
+        const r = pl.anchorR + dr;
+        const c = pl.anchorC + dc;
+        if (r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS) {
+          pairSets[r][c].add(pairKey);
+        }
+      }
+    }
+  }
 
   // 0 = empty, -1 = blocked, -2 = target (must stay uncovered), >0 = piece id
   const board: number[][] = [];
@@ -169,14 +231,14 @@ function runSolver(
   for (const placement of initialPlacements) {
     const pieceIndex = idToIndex.get(placement.pieceId);
     if (pieceIndex == null) {
-      sendMessage({ type: "done", totalCount: 0 });
+      sendDone(0);
       return;
     }
     const solverPiece = pieces[pieceIndex];
     const orientation =
       solverPiece.orientations[placement.orientationIndex];
     if (!orientation) {
-      sendMessage({ type: "done", totalCount: 0 });
+      sendDone(0);
       return;
     }
 
@@ -191,7 +253,7 @@ function runSolver(
         c >= GRID_COLS ||
         board[r][c] !== 0
       ) {
-        sendMessage({ type: "done", totalCount: 0 });
+        sendDone(0);
         return;
       }
       placedCells.push([r, c]);
@@ -201,6 +263,12 @@ function runSolver(
       board[r][c] = solverPiece.id;
     }
     used[pieceIndex] = true;
+    placementStack.push({
+      pi: pieceIndex,
+      oi: placement.orientationIndex,
+      anchorR: placement.row,
+      anchorC: placement.col,
+    });
   }
 
   function floodFillSize(startR: number, startC: number): number {
@@ -258,7 +326,7 @@ function runSolver(
 
   // Early prune in case the fixed layout already creates impossible regions.
   if (hasIsolatedRegion()) {
-    sendMessage({ type: "done", totalCount: 0 });
+    sendDone(0);
     return;
   }
 
@@ -294,7 +362,7 @@ function runSolver(
     if (cancelled) return 0;
 
     const key = makeStateKey();
-    const cached = cache.get(key);
+    const cached = collectCellPairSets ? undefined : cache.get(key);
     if (cached !== undefined) {
       solutionCount += cached;
       const now = performance.now();
@@ -319,6 +387,7 @@ function runSolver(
     if (tr === -1) {
       const localCount = 1;
       solutionCount += localCount;
+      recordLeafPairSets();
       const now = performance.now();
       if (now - lastReportTime > 100) {
         sendMessage({ type: "progress", count: solutionCount });
@@ -360,6 +429,7 @@ function runSolver(
         }
         if (!valid) continue;
 
+        placementStack.push({ pi, oi, anchorR, anchorC });
         for (const [r, c] of placed) board[r][c] = piece.id;
         used[pi] = true;
 
@@ -369,6 +439,7 @@ function runSolver(
 
         for (const [r, c] of placed) board[r][c] = 0;
         used[pi] = false;
+        placementStack.pop();
       }
     }
 
@@ -386,9 +457,5 @@ function runSolver(
     return;
   }
 
-  sendMessage({
-    type: "done",
-    totalCount: solutionCount,
-    cacheStates: statesForDate,
-  });
+  sendDone(solutionCount);
 }
