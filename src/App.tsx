@@ -25,6 +25,7 @@ import {
   validatePlacement,
   placePieceOnGrid,
 } from "./utils/validation";
+import { makePuzzleKey } from "./utils/puzzleKey";
 import Board from "./components/Board";
 import PieceTray from "./components/PieceTray";
 import DateSelector from "./components/DateSelector";
@@ -261,6 +262,13 @@ export default function App({
   const [showSolutionToast, setShowSolutionToast] = useState(false);
   const [showDuplicateToast, setShowDuplicateToast] = useState(false);
   const [solverUsedByDate, setSolverUsedByDate] = useState<Record<string, boolean>>({});
+  /** Distinct board states on which a hint was requested (same dedupe as /pi). */
+  const [hintsUsedCount, setHintsUsedCount] = useState(0);
+  const hintsUsedCountRef = useRef(0);
+  const hintPuzzleKeysRef = useRef<Set<string>>(new Set());
+  /** Each time the user chooses Show Shadows (new run or revealing existing overlay). */
+  const [shadowShowCount, setShadowShowCount] = useState(0);
+  const shadowShowCountRef = useRef(0);
   const [showTutorial, setShowTutorial] = useState(false);
   const tutorialWasAutoOpenedRef = useRef(false);
   const [shadowOverlay, setShadowOverlay] = useState<ShadowAnalysisPayload | null>(
@@ -276,6 +284,14 @@ export default function App({
     setShadowsVisible(false);
     setForcedHintCells(new Set());
   }, [placedPieces, targetMonth, targetDay]);
+
+  useEffect(() => {
+    hintPuzzleKeysRef.current = new Set();
+    hintsUsedCountRef.current = 0;
+    shadowShowCountRef.current = 0;
+    setHintsUsedCount(0);
+    setShadowShowCount(0);
+  }, [targetMonth, targetDay]);
 
   const handleShadowAnalysis = useCallback((payload: ShadowAnalysisPayload) => {
     setShadowOverlay(payload);
@@ -324,10 +340,32 @@ export default function App({
     }
     if (shadowOverlay) {
       setShadowsVisible(true);
+      const next = shadowShowCountRef.current + 1;
+      shadowShowCountRef.current = next;
+      setShadowShowCount(next);
     } else {
+      const next = shadowShowCountRef.current + 1;
+      shadowShowCountRef.current = next;
+      setShadowShowCount(next);
       solverRef.current?.startShadowAnalysis();
     }
   }, [shadowsVisible, shadowOverlay]);
+
+  const handleSolveHintTracked = useCallback(
+    (pieces: PlacedPiece[]) => {
+      if (competitionMode) {
+        onSolveHint?.(pieces);
+        return;
+      }
+      const puzzleKey = makePuzzleKey(pieces);
+      if (hintPuzzleKeysRef.current.has(puzzleKey)) return;
+      hintPuzzleKeysRef.current.add(puzzleKey);
+      const next = hintsUsedCountRef.current + 1;
+      hintsUsedCountRef.current = next;
+      setHintsUsedCount(next);
+    },
+    [competitionMode, onSolveHint]
+  );
 
   const pieceNameById = useMemo(() => {
     const m: Record<number, string> = {};
@@ -567,6 +605,12 @@ export default function App({
                 You found the solution with no help!
               </p>
             )}
+            <p className="celebration-subtitle">
+              Hints (distinct board positions): {hintsUsedCount}
+            </p>
+            <p className="celebration-subtitle">
+              Show Shadows: {shadowShowCount}
+            </p>
             <button
               type="button"
               className="celebration-dismiss"
@@ -613,7 +657,7 @@ export default function App({
             placedPieces={placedPieces}
             onHintRunStart={handleHintRunStart}
             onShadowRunStart={handleShadowRunStart}
-            onSolveHint={competitionMode ? onSolveHint : undefined}
+            onSolveHint={handleSolveHintTracked}
             onShadowAnalysis={handleShadowAnalysis}
             onForcedHintCells={handleForcedHintCells}
             shadowsVisible={shadowsVisible}

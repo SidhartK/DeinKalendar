@@ -6,6 +6,7 @@ import { PlacedPiece, CellValue, GRID_ROWS, GRID_COLS, PIECE_COLORS } from "../t
 import { createEmptyGrid, isBlocked, getTargetCells, getLabelAt } from "../utils/board";
 import { getPieceById, getSolverOrientationIndex } from "../utils/pieces";
 import { validatePlacement, placePieceOnGrid } from "../utils/validation";
+import { makePuzzleKey } from "../utils/puzzleKey";
 import SolutionHistory from "./SolutionHistory";
 import "./PiDayCompetition.css";
 
@@ -95,18 +96,6 @@ function makeSolutionKey(placedPieces: PlacedPiece[]): string {
       const solverOI = getSolverOrientationIndex(piece, p.orientationIndex);
       return `${p.pieceId}@${p.row},${p.col}:${solverOI}`;
     })
-    .join(";");
-}
-
-function makePuzzleKey(placedPieces: PlacedPiece[]): string {
-  const sorted = [...placedPieces].sort((a, b) => {
-    if (a.pieceId !== b.pieceId) return a.pieceId - b.pieceId;
-    if (a.row !== b.row) return a.row - b.row;
-    if (a.col !== b.col) return a.col - b.col;
-    return a.orientationIndex - b.orientationIndex;
-  });
-  return sorted
-    .map((p) => `${p.pieceId}@${p.row},${p.col}:${p.orientationIndex}`)
     .join(";");
 }
 
