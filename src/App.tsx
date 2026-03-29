@@ -2,13 +2,8 @@
 
 import { useReducer, useMemo, useCallback, useRef, useEffect, useState } from "react";
 import confetti from "canvas-confetti";
-import { Coord, PlacedPiece, GameAction } from "./types";
-import {
-  createEmptyGrid,
-  isBoardComplete,
-  isBlocked,
-  getTargetCells,
-} from "./utils/board";
+import { Coord, PlacedPiece, GameAction, type ShadowAnalysisPayload } from "./types";
+import { createEmptyGrid, isBoardComplete } from "./utils/board";
 import {
   getPieces,
   getPieceById,
@@ -22,10 +17,7 @@ import {
 import Board from "./components/Board";
 import PieceTray from "./components/PieceTray";
 import DateSelector from "./components/DateSelector";
-import SolverPanel, {
-  type SolverPanelRef,
-  type ForcedCellCoord,
-} from "./components/SolverPanel";
+import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import HelpHotkeys from "./components/HelpHotkeys";
 import TutorialModal from "./components/TutorialModal";
 import "./App.css";
@@ -260,29 +252,25 @@ export default function App({
   const [solverUsedByDate, setSolverUsedByDate] = useState<Record<string, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(false);
   const tutorialWasAutoOpenedRef = useRef(false);
-  const [forcedHintCells, setForcedHintCells] = useState<Set<string>>(
-    () => new Set()
+  const [shadowOverlay, setShadowOverlay] = useState<ShadowAnalysisPayload | null>(
+    null
   );
 
   useEffect(() => {
-    setForcedHintCells(new Set());
+    setShadowOverlay(null);
   }, [placedPieces, targetMonth, targetDay]);
 
-  const handleForcedCells = useCallback(
-    (cells: ForcedCellCoord[]) => {
-      const targetSet = new Set(
-        getTargetCells(targetMonth, targetDay).map(([r, c]) => `${r},${c}`)
-      );
-      const next = new Set<string>();
-      for (const { r, c } of cells) {
-        if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
-        if (grid[r]?.[c] !== null) continue;
-        next.add(`${r},${c}`);
-      }
-      setForcedHintCells(next);
-    },
-    [grid, targetMonth, targetDay]
-  );
+  const handleShadowAnalysis = useCallback((payload: ShadowAnalysisPayload) => {
+    setShadowOverlay(payload);
+  }, []);
+
+  const pieceNameById = useMemo(() => {
+    const m: Record<number, string> = {};
+    for (const p of pieces) {
+      m[p.id] = p.name;
+    }
+    return m;
+  }, [pieces]);
 
   useEffect(() => {
     if (openTutorialOnMount) {
@@ -477,11 +465,8 @@ export default function App({
   }, [state.removedByWStack.length]);
 
   const handleSolve = useCallback(() => {
-    if (competitionMode) {
-      onSolveHint?.(placedPieces);
-    }
     solverRef.current?.start();
-  }, [competitionMode, onSolveHint, placedPieces]);
+  }, []);
 
   const handleMonthChange = useCallback(
     (month: string) => {
@@ -562,14 +547,14 @@ export default function App({
             targetDay={targetDay}
             placedPieces={placedPieces}
             onSolveStart={() => {
-              setForcedHintCells(new Set());
+              setShadowOverlay(null);
               setSolverUsedByDate((prev) => ({
                 ...prev,
                 [currentDateKey]: true,
               }));
             }}
             onSolveHint={competitionMode ? onSolveHint : undefined}
-            onForcedCells={handleForcedCells}
+            onShadowAnalysis={handleShadowAnalysis}
           />
         </div>
         <div className="app-left-column">
@@ -604,7 +589,8 @@ export default function App({
               selectedAnchorCoord={selectedAnchorCoord}
               onPlacePiece={handlePlacePiece}
               onPickUpPiece={handlePickUpPiece}
-              forcedHintCells={forcedHintCells}
+              shadowOverlay={shadowOverlay}
+              pieceNameById={pieceNameById}
             />
           </div>
         </div>

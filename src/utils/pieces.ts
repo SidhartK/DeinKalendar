@@ -1,5 +1,6 @@
 import { Coord, PieceDefinition, Orientation } from "../types";
 import pieceData from "../data/state_pieces.json";
+import { footprintKeyFromRelativeCells } from "./placementFootprint";
 
 function parseShape(shape: string[]): Coord[] {
   const cells: Coord[] = [];
@@ -34,8 +35,7 @@ function flipHorizontal(cells: Coord[]): Coord[] {
 }
 
 function coordsKey(cells: Coord[]): string {
-  const norm = normalize(cells);
-  return norm.map(([r, c]) => `${r},${c}`).join("|");
+  return footprintKeyFromRelativeCells(cells);
 }
 
 type CellWithId = {

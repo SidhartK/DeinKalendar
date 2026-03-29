@@ -1,5 +1,7 @@
 export {};
 
+import { footprintKeyFromRelativeCells } from "../utils/placementFootprint";
+
 const GRID_ROWS = 7;
 const GRID_COLS = 7;
 
@@ -128,7 +130,7 @@ self.addEventListener("message", (e: MessageEvent) => {
       initialPlacements,
       cache,
       statesForDate,
-      Boolean(msg.collectCellPairSets)
+      Boolean(msg.collectShadowData)
     );
   }
 });
@@ -140,28 +142,58 @@ function runSolver(
   initialPlacements: InitialPlacement[],
   cache: StateCache,
   statesForDate: number,
-  collectCellPairSets: boolean
+  collectShadowData: boolean
 ) {
   const targets = getTargetCells(targetMonth, targetDay);
   const targetSet = new Set(targets.map(([r, c]) => `${r},${c}`));
 
-  const pairSets: Set<string>[][] | null = collectCellPairSets
+  const shadowCellSets: Set<string>[][] | null = collectShadowData
     ? Array.from({ length: GRID_ROWS }, () =>
         Array.from({ length: GRID_COLS }, () => new Set<string>())
       )
     : null;
 
+  const shadowCatalog = collectShadowData
+    ? new Map<
+        string,
+        { pieceId: number; cells: [number, number][] }
+      >()
+    : null;
+
   const placementStack: StackPlacement[] = [];
 
   function sendDone(totalCount: number): void {
-    if (collectCellPairSets && pairSets) {
-      const singletonCells: { r: number; c: number }[] = [];
+    if (collectShadowData && shadowCellSets && shadowCatalog) {
+      const shadowCatalogOut: Record<
+        string,
+        { pieceId: number; cells: [number, number][] }
+      > = {};
+      if (!cancelled) {
+        for (const [k, v] of shadowCatalog) {
+          shadowCatalogOut[k] = {
+            pieceId: v.pieceId,
+            cells: v.cells.map(([r, c]) => [r, c] as [number, number]),
+          };
+        }
+      }
+      const shadowCells: {
+        r: number;
+        c: number;
+        count: number;
+        keys: string[];
+      }[] = [];
       if (!cancelled) {
         for (let r = 0; r < GRID_ROWS; r++) {
           for (let c = 0; c < GRID_COLS; c++) {
             if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
-            if (pairSets[r][c].size === 1) {
-              singletonCells.push({ r, c });
+            const set = shadowCellSets[r][c];
+            if (set.size > 0) {
+              shadowCells.push({
+                r,
+                c,
+                count: set.size,
+                keys: [...set],
+              });
             }
           }
         }
@@ -170,29 +202,41 @@ function runSolver(
         type: "done",
         totalCount,
         cacheStates: statesForDate,
-        singletonCells,
+        shadowCatalog: shadowCatalogOut,
+        shadowCells,
+        cancelled,
       });
     } else {
       sendMessage({
         type: "done",
         totalCount,
         cacheStates: statesForDate,
+        cancelled,
       });
     }
   }
 
-  function recordLeafPairSets(): void {
-    if (!collectCellPairSets || !pairSets) return;
+  function recordLeafShadows(): void {
+    if (!collectShadowData || !shadowCellSets || !shadowCatalog) return;
     for (const pl of placementStack) {
       const piece = pieces[pl.pi];
       const orient = piece.orientations[pl.oi];
       if (!orient) continue;
-      const pairKey = `${pl.pi},${pl.oi}`;
-      for (const [dr, dc] of orient.cells) {
-        const r = pl.anchorR + dr;
-        const c = pl.anchorC + dc;
+      const footprintKey = footprintKeyFromRelativeCells(orient.cells);
+      const shadowKey = `${piece.id}|${footprintKey}|${pl.anchorR}|${pl.anchorC}`;
+      const absCells: [number, number][] = orient.cells.map(
+        ([dr, dc]) =>
+          [pl.anchorR + dr, pl.anchorC + dc] as [number, number]
+      );
+      if (!shadowCatalog.has(shadowKey)) {
+        shadowCatalog.set(shadowKey, {
+          pieceId: piece.id,
+          cells: absCells.map(([r, c]) => [r, c]),
+        });
+      }
+      for (const [r, c] of absCells) {
         if (r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS) {
-          pairSets[r][c].add(pairKey);
+          shadowCellSets[r][c].add(shadowKey);
         }
       }
     }
@@ -362,7 +406,7 @@ function runSolver(
     if (cancelled) return 0;
 
     const key = makeStateKey();
-    const cached = collectCellPairSets ? undefined : cache.get(key);
+    const cached = collectShadowData ? undefined : cache.get(key);
     if (cached !== undefined) {
       solutionCount += cached;
       const now = performance.now();
@@ -387,7 +431,7 @@ function runSolver(
     if (tr === -1) {
       const localCount = 1;
       solutionCount += localCount;
-      recordLeafPairSets();
+      recordLeafShadows();
       const now = performance.now();
       if (now - lastReportTime > 100) {
         sendMessage({ type: "progress", count: solutionCount });

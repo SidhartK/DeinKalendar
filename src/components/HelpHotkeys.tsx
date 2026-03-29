@@ -13,7 +13,7 @@ const HOTKEYS = [
   },
   { key: "Space", action: "Place piece (when valid)" },
   { key: "W", action: "Undo last removal" },
-  { key: "H", action: "Hint" },
+  { key: "H", action: "Shadows (solver)" },
 ];
 
 export default function HelpHotkeys() {

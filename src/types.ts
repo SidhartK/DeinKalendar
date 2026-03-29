@@ -62,6 +62,24 @@ export type GameAction =
   | { type: "RESTORE_LAST_REMOVED" }
   | { type: "CLEAR_BOARD" };
 
+/** One distinct piece placement (footprint + anchor) from shadow analysis. */
+export interface ShadowCatalogEntry {
+  pieceId: number;
+  cells: [number, number][];
+}
+
+export interface ShadowCellInfo {
+  r: number;
+  c: number;
+  count: number;
+  keys: string[];
+}
+
+export interface ShadowAnalysisPayload {
+  shadowCatalog: Record<string, ShadowCatalogEntry>;
+  shadowCells: ShadowCellInfo[];
+}
+
 export const PIECE_COLORS: Record<number, string> = {
   1: "#e74c3c",
   2: "#3498db",

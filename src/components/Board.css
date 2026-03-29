@@ -1,3 +1,9 @@
+.board-wrap {
+  display: inline-block;
+  position: relative;
+  max-width: 100%;
+}
+
 .board {
   display: inline-flex;
   flex-direction: column;
@@ -44,7 +50,7 @@
   background: #2c2c1a;
 }
 
-.board-cell.forced-hint:not(.target):not(.occupied) {
+.board-cell.shadow-unique:not(.target):not(.occupied) {
   box-shadow:
     inset 0 0 0 2.5px rgba(78, 205, 196, 0.95),
     0 0 14px rgba(46, 196, 182, 0.35);
@@ -53,6 +59,24 @@
     rgba(30, 58, 68, 0.95) 0%,
     rgba(22, 48, 58, 0.98) 100%
   );
+}
+
+.shadow-count-badge {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .board-cell.occupied {
