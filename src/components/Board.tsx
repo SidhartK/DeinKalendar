@@ -34,6 +34,8 @@ interface BoardProps {
   onPickUpPiece: (pieceId: number, row: number, col: number) => void;
   shadowOverlay?: ShadowAnalysisPayload | null;
   pieceNameById?: Record<number, string>;
+  /** Empty cells with a single (piece, orientation) across all solutions (hint). */
+  forcedHintCells?: Set<string>;
 }
 
 type ShadowPanelState = { r: number; c: number; rect: DOMRect };
@@ -49,6 +51,7 @@ export default function Board({
   onPickUpPiece,
   shadowOverlay,
   pieceNameById = {},
+  forcedHintCells,
 }: BoardProps) {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
   const [shadowHover, setShadowHover] = useState<ShadowPanelState | null>(null);
@@ -304,12 +307,19 @@ export default function Board({
                 !previewInfo;
               const shadowUnique =
                 showShadowBadge && shadowInfo.count === 1;
+              const forcedHint =
+                (forcedHintCells?.has(cellKey) ?? false) &&
+                pieceId === null &&
+                !blocked &&
+                !isTarget;
 
               let className = "board-cell";
               if (blocked) className += " blocked";
               if (isTarget) className += " target";
               if (pieceId !== null) className += " occupied";
-              if (shadowUnique && !previewInfo) className += " shadow-unique";
+              if ((forcedHint || shadowUnique) && !previewInfo) {
+                className += " solver-highlight-cell";
+              }
               if (previewInfo) {
                 className += previewInfo.valid
                   ? " preview-valid"

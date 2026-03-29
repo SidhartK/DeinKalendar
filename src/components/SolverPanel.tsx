@@ -8,7 +8,11 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import type { PlacedPiece, ShadowAnalysisPayload } from "../types";
+import type {
+  PlacedPiece,
+  ShadowAnalysisPayload,
+  ForcedHintCell,
+} from "../types";
 import {
   getPieces,
   getUniqueOrientations,
@@ -20,17 +24,29 @@ interface SolverPanelProps {
   targetMonth: string;
   targetDay: number;
   placedPieces: PlacedPiece[];
-  onSolveStart?: () => void;
+  /** Clears hint highlights; marks solver used (e.g. celebration). */
+  onHintRunStart?: () => void;
+  /** Clears shadow overlay while a new shadow run is in flight. */
+  onShadowRunStart?: () => void;
   onSolveHint?: (placedPieces: PlacedPiece[]) => void;
-  /** Full shadow analysis after a successful run (not sent if cancelled). */
   onShadowAnalysis?: (payload: ShadowAnalysisPayload) => void;
+  onForcedHintCells?: (cells: ForcedHintCell[]) => void;
+  /** Whether shadow counts are currently shown on the board. */
+  shadowsVisible: boolean;
+  /** True if the last shadow run produced data for the current board. */
+  shadowHasData: boolean;
+  /** Show / hide shadows, or start a shadow run when there is no data yet. */
+  onShadowToggle: () => void;
 }
 
 export interface SolverPanelRef {
-  start: () => void;
+  startHint: () => void;
+  startShadowAnalysis: () => void;
 }
 
 type SolverStatus = "idle" | "solving" | "done";
+
+type RunMode = "hint" | "shadow";
 
 const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
   function SolverPanel(
@@ -38,17 +54,25 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       targetMonth,
       targetDay,
       placedPieces,
-      onSolveStart,
+      onHintRunStart,
+      onShadowRunStart,
       onSolveHint,
       onShadowAnalysis,
+      onForcedHintCells,
+      shadowsVisible,
+      shadowHasData,
+      onShadowToggle,
     },
     ref
   ) {
     const [status, setStatus] = useState<SolverStatus>("idle");
     const [solutionCount, setSolutionCount] = useState(0);
     const workerRef = useRef<Worker | null>(null);
+    const runModeRef = useRef<RunMode>("hint");
     const onShadowAnalysisRef = useRef(onShadowAnalysis);
     onShadowAnalysisRef.current = onShadowAnalysis;
+    const onForcedHintCellsRef = useRef(onForcedHintCells);
+    onForcedHintCellsRef.current = onForcedHintCells;
 
     const cleanup = useCallback(() => {
       if (workerRef.current) {
@@ -83,6 +107,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
             totalCount?: number;
             shadowCatalog?: ShadowAnalysisPayload["shadowCatalog"];
             shadowCells?: ShadowAnalysisPayload["shadowCells"];
+            singletonCells?: ForcedHintCell[];
             cancelled?: boolean;
           };
           if (msg.type === "progress") {
@@ -90,15 +115,22 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
           } else if (msg.type === "done") {
             setSolutionCount(msg.totalCount ?? 0);
             setStatus("done");
+            if (msg.cancelled) return;
             if (
-              !msg.cancelled &&
               msg.shadowCatalog &&
-              Array.isArray(msg.shadowCells)
+              Array.isArray(msg.shadowCells) &&
+              runModeRef.current === "shadow"
             ) {
               onShadowAnalysisRef.current?.({
                 shadowCatalog: msg.shadowCatalog,
                 shadowCells: msg.shadowCells,
               });
+            }
+            if (
+              Array.isArray(msg.singletonCells) &&
+              runModeRef.current === "hint"
+            ) {
+              onForcedHintCellsRef.current?.(msg.singletonCells);
             }
           }
         };
@@ -111,50 +143,75 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       return worker;
     }, [cleanup]);
 
-    const handleStart = useCallback(() => {
-      setStatus("solving");
-      setSolutionCount(0);
-      onSolveHint?.(placedPieces);
-      onSolveStart?.();
+    const postSolverJob = useCallback(
+      (mode: RunMode) => {
+        setStatus("solving");
+        setSolutionCount(0);
+        runModeRef.current = mode;
 
-      const worker = ensureWorker();
-      worker.postMessage({ type: "stop" });
-      const pieces = getPieces();
-      const initialPlacements = placedPieces.map((pp) => {
-        const piece = pieces.find((p) => p.id === pp.pieceId)!;
-        return {
-          pieceId: pp.pieceId,
-          row: pp.row,
-          col: pp.col,
-          orientationIndex: getSolverOrientationIndex(piece, pp.orientationIndex),
-        };
-      });
-      worker.postMessage({
-        type: "start",
+        if (mode === "hint") {
+          onSolveHint?.(placedPieces);
+          onHintRunStart?.();
+        } else {
+          onShadowRunStart?.();
+        }
+
+        const worker = ensureWorker();
+        worker.postMessage({ type: "stop" });
+        const pieces = getPieces();
+        const initialPlacements = placedPieces.map((pp) => {
+          const piece = pieces.find((p) => p.id === pp.pieceId)!;
+          return {
+            pieceId: pp.pieceId,
+            row: pp.row,
+            col: pp.col,
+            orientationIndex: getSolverOrientationIndex(
+              piece,
+              pp.orientationIndex
+            ),
+          };
+        });
+        worker.postMessage({
+          type: "start",
+          targetMonth,
+          targetDay,
+          pieces: pieces.map((p) => ({
+            id: p.id,
+            orientations: getUniqueOrientations(p).map((o) => ({
+              cells: o.cells,
+            })),
+          })),
+          initialPlacements,
+          collectShadowData: mode === "shadow",
+          collectSingletonHints: mode === "hint",
+        });
+      },
+      [
         targetMonth,
         targetDay,
-        pieces: pieces.map((p) => ({
-          id: p.id,
-          orientations: getUniqueOrientations(p).map((o) => ({ cells: o.cells })),
-        })),
-        initialPlacements,
-        collectShadowData: true,
-      });
-    }, [
-      targetMonth,
-      targetDay,
-      placedPieces,
-      ensureWorker,
-      onSolveStart,
-      onSolveHint,
-    ]);
+        placedPieces,
+        ensureWorker,
+        onHintRunStart,
+        onShadowRunStart,
+        onSolveHint,
+      ]
+    );
+
+    const startHint = useCallback(() => {
+      postSolverJob("hint");
+    }, [postSolverJob]);
+
+    const startShadowAnalysis = useCallback(() => {
+      postSolverJob("shadow");
+    }, [postSolverJob]);
 
     useImperativeHandle(
       ref,
       () => ({
-        start: handleStart,
+        startHint,
+        startShadowAnalysis,
       }),
-      [handleStart]
+      [startHint, startShadowAnalysis]
     );
 
     const handleStop = useCallback(() => {
@@ -162,25 +219,31 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       setStatus("done");
     }, []);
 
+    const shadowToggleLabel = shadowsVisible
+      ? "Hide Shadows"
+      : "Show Shadows";
+
     return (
       <div className="solver-panel">
-        <h3>Shadows</h3>
+        <h3>Solver</h3>
+
         <p className="solver-description">
-          Run the solver to see how many distinct piece placements can cover each
-          empty square across all solutions. Hover or tap a cell for placement
-          diagrams.
+          <strong>Hint</strong> counts solutions and highlights empty cells that
+          are forced to a single piece orientation across all completions.
         </p>
         <div className="solver-controls">
           {status !== "solving" ? (
             <button
-              className="solver-btn solve-btn"
-              onClick={handleStart}
-              title="Shadow analysis"
+              type="button"
+              className="solver-btn solve-btn solver-btn--hint"
+              onClick={startHint}
+              title="Hint"
             >
-              Shadows (H)
+              Hint (H)
             </button>
           ) : (
             <button
+              type="button"
               className="solver-btn stop-btn"
               onClick={handleStop}
               title="Stop the solver"
@@ -189,6 +252,30 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
             </button>
           )}
         </div>
+
+        <p className="solver-description solver-description--shadow">
+          <strong>Shadows</strong> show how many distinct piece placements can
+          cover each square; hover or tap a cell for diagrams.
+        </p>
+        <div className="solver-controls solver-controls--secondary">
+          {status !== "solving" ? (
+            <button
+              type="button"
+              className="solver-btn solve-btn solver-btn--shadows"
+              onClick={onShadowToggle}
+              title={
+                shadowsVisible
+                  ? "Hide shadow counts on the board"
+                  : shadowHasData
+                    ? "Show shadow counts (already computed)"
+                    : "Compute shadow counts and show them"
+              }
+            >
+              {shadowToggleLabel} (S)
+            </button>
+          ) : null}
+        </div>
+
         {status !== "idle" && (
           <div className="solver-results">
             <div className="solver-stat">

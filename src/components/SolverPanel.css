@@ -21,7 +21,21 @@
 }
 
 .solver-controls {
+  margin-bottom: 8px;
+}
+
+.solver-controls--secondary {
   margin-bottom: 12px;
+}
+
+.solver-description strong {
+  color: #c8c8d8;
+}
+
+.solver-description--shadow {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .solver-btn {
@@ -38,6 +52,14 @@
 .solve-btn {
   background: linear-gradient(135deg, #3498db, #2ecc71);
   color: white;
+}
+
+.solver-btn--hint {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.solver-btn--shadows {
+  background: linear-gradient(135deg, #9b59b6, #1abc9c);
 }
 
 .solve-btn:hover {

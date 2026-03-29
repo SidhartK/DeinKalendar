@@ -2,8 +2,19 @@
 
 import { useReducer, useMemo, useCallback, useRef, useEffect, useState } from "react";
 import confetti from "canvas-confetti";
-import { Coord, PlacedPiece, GameAction, type ShadowAnalysisPayload } from "./types";
-import { createEmptyGrid, isBoardComplete } from "./utils/board";
+import {
+  Coord,
+  PlacedPiece,
+  GameAction,
+  type ShadowAnalysisPayload,
+  type ForcedHintCell,
+} from "./types";
+import {
+  createEmptyGrid,
+  isBoardComplete,
+  isBlocked,
+  getTargetCells,
+} from "./utils/board";
 import {
   getPieces,
   getPieceById,
@@ -255,14 +266,68 @@ export default function App({
   const [shadowOverlay, setShadowOverlay] = useState<ShadowAnalysisPayload | null>(
     null
   );
+  const [shadowsVisible, setShadowsVisible] = useState(false);
+  const [forcedHintCells, setForcedHintCells] = useState<Set<string>>(
+    () => new Set()
+  );
 
   useEffect(() => {
     setShadowOverlay(null);
+    setShadowsVisible(false);
+    setForcedHintCells(new Set());
   }, [placedPieces, targetMonth, targetDay]);
 
   const handleShadowAnalysis = useCallback((payload: ShadowAnalysisPayload) => {
     setShadowOverlay(payload);
+    setShadowsVisible(true);
   }, []);
+
+  const handleForcedHintCells = useCallback(
+    (cells: ForcedHintCell[]) => {
+      const targetSet = new Set(
+        getTargetCells(targetMonth, targetDay).map(([r, c]) => `${r},${c}`)
+      );
+      const next = new Set<string>();
+      for (const { r, c } of cells) {
+        if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
+        if (grid[r]?.[c] !== null) continue;
+        next.add(`${r},${c}`);
+      }
+      setForcedHintCells(next);
+    },
+    [grid, targetMonth, targetDay]
+  );
+
+  const handleHintRunStart = useCallback(() => {
+    setForcedHintCells(new Set());
+    const key = `${targetMonth}|${targetDay}`;
+    setSolverUsedByDate((prev) => ({
+      ...prev,
+      [key]: true,
+    }));
+  }, [targetMonth, targetDay]);
+
+  const handleShadowRunStart = useCallback(() => {
+    setShadowOverlay(null);
+    setShadowsVisible(false);
+    const key = `${targetMonth}|${targetDay}`;
+    setSolverUsedByDate((prev) => ({
+      ...prev,
+      [key]: true,
+    }));
+  }, [targetMonth, targetDay]);
+
+  const handleShadowToggle = useCallback(() => {
+    if (shadowsVisible) {
+      setShadowsVisible(false);
+      return;
+    }
+    if (shadowOverlay) {
+      setShadowsVisible(true);
+    } else {
+      solverRef.current?.startShadowAnalysis();
+    }
+  }, [shadowsVisible, shadowOverlay]);
 
   const pieceNameById = useMemo(() => {
     const m: Record<number, string> = {};
@@ -465,7 +530,7 @@ export default function App({
   }, [state.removedByWStack.length]);
 
   const handleSolve = useCallback(() => {
-    solverRef.current?.start();
+    solverRef.current?.startHint();
   }, []);
 
   const handleMonthChange = useCallback(
@@ -546,15 +611,14 @@ export default function App({
             targetMonth={targetMonth}
             targetDay={targetDay}
             placedPieces={placedPieces}
-            onSolveStart={() => {
-              setShadowOverlay(null);
-              setSolverUsedByDate((prev) => ({
-                ...prev,
-                [currentDateKey]: true,
-              }));
-            }}
+            onHintRunStart={handleHintRunStart}
+            onShadowRunStart={handleShadowRunStart}
             onSolveHint={competitionMode ? onSolveHint : undefined}
             onShadowAnalysis={handleShadowAnalysis}
+            onForcedHintCells={handleForcedHintCells}
+            shadowsVisible={shadowsVisible}
+            shadowHasData={shadowOverlay != null}
+            onShadowToggle={handleShadowToggle}
           />
         </div>
         <div className="app-left-column">
@@ -589,8 +653,9 @@ export default function App({
               selectedAnchorCoord={selectedAnchorCoord}
               onPlacePiece={handlePlacePiece}
               onPickUpPiece={handlePickUpPiece}
-              shadowOverlay={shadowOverlay}
+              shadowOverlay={shadowsVisible ? shadowOverlay : null}
               pieceNameById={pieceNameById}
+              forcedHintCells={forcedHintCells}
             />
           </div>
         </div>
@@ -605,6 +670,7 @@ export default function App({
             onRemoveLastPiece={handleRemoveLastPiece}
             onRestoreLastRemoved={handleRestoreLastRemoved}
             onSolve={handleSolve}
+            onShadowToggle={handleShadowToggle}
           />
         </div>
       </main>

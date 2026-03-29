@@ -21,6 +21,7 @@ interface PieceTrayProps {
   onRemoveLastPiece: () => void;
   onRestoreLastRemoved: () => void;
   onSolve: () => void;
+  onShadowToggle: () => void;
 }
 
 export default function PieceTray({
@@ -33,6 +34,7 @@ export default function PieceTray({
   onRemoveLastPiece,
   onRestoreLastRemoved,
   onSolve,
+  onShadowToggle,
 }: PieceTrayProps) {
   const selectedPiece = pieces.find((p) => p.id === selectedPieceId) ?? null;
 
@@ -87,11 +89,25 @@ export default function PieceTray({
       } else if (e.key === "h" || e.key === "H") {
         e.preventDefault();
         onSolve();
+      } else if (e.key === "s" || e.key === "S") {
+        e.preventDefault();
+        onShadowToggle();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [pieces, placedPieceIds, selectedPieceId, rotateForward, flip, onSelectPiece, onRemoveLastPiece, onRestoreLastRemoved, onSolve]);
+  }, [
+    pieces,
+    placedPieceIds,
+    selectedPieceId,
+    rotateForward,
+    flip,
+    onSelectPiece,
+    onRemoveLastPiece,
+    onRestoreLastRemoved,
+    onSolve,
+    onShadowToggle,
+  ]);
 
   return (
     <div className="piece-tray">

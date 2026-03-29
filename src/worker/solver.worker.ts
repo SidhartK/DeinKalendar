@@ -130,7 +130,8 @@ self.addEventListener("message", (e: MessageEvent) => {
       initialPlacements,
       cache,
       statesForDate,
-      Boolean(msg.collectShadowData)
+      Boolean(msg.collectShadowData),
+      Boolean(msg.collectSingletonHints)
     );
   }
 });
@@ -142,12 +143,21 @@ function runSolver(
   initialPlacements: InitialPlacement[],
   cache: StateCache,
   statesForDate: number,
-  collectShadowData: boolean
+  collectShadowData: boolean,
+  collectSingletonHints: boolean
 ) {
   const targets = getTargetCells(targetMonth, targetDay);
   const targetSet = new Set(targets.map(([r, c]) => `${r},${c}`));
 
+  const heavyCollection = collectShadowData || collectSingletonHints;
+
   const shadowCellSets: Set<string>[][] | null = collectShadowData
+    ? Array.from({ length: GRID_ROWS }, () =>
+        Array.from({ length: GRID_COLS }, () => new Set<string>())
+      )
+    : null;
+
+  const singletonPairSets: Set<string>[][] | null = collectSingletonHints
     ? Array.from({ length: GRID_ROWS }, () =>
         Array.from({ length: GRID_COLS }, () => new Set<string>())
       )
@@ -163,56 +173,79 @@ function runSolver(
   const placementStack: StackPlacement[] = [];
 
   function sendDone(totalCount: number): void {
-    if (collectShadowData && shadowCellSets && shadowCatalog) {
-      const shadowCatalogOut: Record<
-        string,
-        { pieceId: number; cells: [number, number][] }
-      > = {};
-      if (!cancelled) {
-        for (const [k, v] of shadowCatalog) {
-          shadowCatalogOut[k] = {
-            pieceId: v.pieceId,
-            cells: v.cells.map(([r, c]) => [r, c] as [number, number]),
-          };
-        }
+    const shadowCatalogOut: Record<
+      string,
+      { pieceId: number; cells: [number, number][] }
+    > = {};
+    if (!cancelled && collectShadowData && shadowCatalog) {
+      for (const [k, v] of shadowCatalog) {
+        shadowCatalogOut[k] = {
+          pieceId: v.pieceId,
+          cells: v.cells.map(([r, c]) => [r, c] as [number, number]),
+        };
       }
-      const shadowCells: {
-        r: number;
-        c: number;
-        count: number;
-        keys: string[];
-      }[] = [];
-      if (!cancelled) {
-        for (let r = 0; r < GRID_ROWS; r++) {
-          for (let c = 0; c < GRID_COLS; c++) {
-            if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
-            const set = shadowCellSets[r][c];
-            if (set.size > 0) {
-              shadowCells.push({
-                r,
-                c,
-                count: set.size,
-                keys: [...set],
-              });
-            }
+    }
+    const shadowCells: {
+      r: number;
+      c: number;
+      count: number;
+      keys: string[];
+    }[] = [];
+    if (!cancelled && collectShadowData && shadowCellSets) {
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
+          const set = shadowCellSets[r][c];
+          if (set.size > 0) {
+            shadowCells.push({
+              r,
+              c,
+              count: set.size,
+              keys: [...set],
+            });
           }
         }
       }
-      sendMessage({
-        type: "done",
-        totalCount,
-        cacheStates: statesForDate,
-        shadowCatalog: shadowCatalogOut,
-        shadowCells,
-        cancelled,
-      });
-    } else {
-      sendMessage({
-        type: "done",
-        totalCount,
-        cacheStates: statesForDate,
-        cancelled,
-      });
+    }
+
+    const singletonCells: { r: number; c: number }[] = [];
+    if (!cancelled && collectSingletonHints && singletonPairSets) {
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
+          if (singletonPairSets[r][c].size === 1) {
+            singletonCells.push({ r, c });
+          }
+        }
+      }
+    }
+
+    sendMessage({
+      type: "done",
+      totalCount,
+      cacheStates: statesForDate,
+      cancelled,
+      ...(collectShadowData
+        ? { shadowCatalog: shadowCatalogOut, shadowCells }
+        : {}),
+      ...(collectSingletonHints ? { singletonCells } : {}),
+    });
+  }
+
+  function recordLeafSingletonHints(): void {
+    if (!collectSingletonHints || !singletonPairSets) return;
+    for (const pl of placementStack) {
+      const piece = pieces[pl.pi];
+      const orient = piece.orientations[pl.oi];
+      if (!orient) continue;
+      const pairKey = `${pl.pi},${pl.oi}`;
+      for (const [dr, dc] of orient.cells) {
+        const r = pl.anchorR + dr;
+        const c = pl.anchorC + dc;
+        if (r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS) {
+          singletonPairSets[r][c].add(pairKey);
+        }
+      }
     }
   }
 
@@ -406,7 +439,7 @@ function runSolver(
     if (cancelled) return 0;
 
     const key = makeStateKey();
-    const cached = collectShadowData ? undefined : cache.get(key);
+    const cached = heavyCollection ? undefined : cache.get(key);
     if (cached !== undefined) {
       solutionCount += cached;
       const now = performance.now();
@@ -432,6 +465,7 @@ function runSolver(
       const localCount = 1;
       solutionCount += localCount;
       recordLeafShadows();
+      recordLeafSingletonHints();
       const now = performance.now();
       if (now - lastReportTime > 100) {
         sendMessage({ type: "progress", count: solutionCount });
