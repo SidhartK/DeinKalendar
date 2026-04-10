@@ -29,6 +29,7 @@ import DateSelector from "./components/DateSelector";
 import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import HelpHotkeys from "./components/HelpHotkeys";
 import TutorialModal from "./components/TutorialModal";
+import StatsPanel from "./components/StatsPanel";
 import "./App.css";
 
 interface ReducerState {
@@ -263,9 +264,13 @@ export default function App({
   const [hintsUsedCount, setHintsUsedCount] = useState(0);
   const hintsUsedCountRef = useRef(0);
   const hintPuzzleKeysRef = useRef<Set<string>>(new Set());
-  /** Each time the user chooses Show Shadows (new run or revealing existing overlay). */
+  /** Each time the user chooses Show # of Coverings per Square (new run or revealing existing overlay). */
   const [shadowShowCount, setShadowShowCount] = useState(0);
   const shadowShowCountRef = useRef(0);
+  /** Unique board squares for which the user opened the coverings popover. */
+  const [coveringsSquaresViewedCount, setCoveringsSquaresViewedCount] =
+    useState(0);
+  const coveringsSquaresViewedRef = useRef<Set<string>>(new Set());
   const [showTutorial, setShowTutorial] = useState(false);
   const tutorialWasAutoOpenedRef = useRef(false);
   const [shadowOverlay, setShadowOverlay] = useState<ShadowAnalysisPayload | null>(
@@ -282,8 +287,10 @@ export default function App({
     hintPuzzleKeysRef.current = new Set();
     hintsUsedCountRef.current = 0;
     shadowShowCountRef.current = 0;
+    coveringsSquaresViewedRef.current = new Set();
     setHintsUsedCount(0);
     setShadowShowCount(0);
+    setCoveringsSquaresViewedCount(0);
   }, [targetMonth, targetDay]);
 
   const handleShadowAnalysis = useCallback((payload: ShadowAnalysisPayload) => {
@@ -326,6 +333,13 @@ export default function App({
       solverRef.current?.startShadowAnalysis();
     }
   }, [shadowsVisible, shadowOverlay]);
+
+  const handleCoveringsViewed = useCallback((row: number, col: number) => {
+    const key = `${targetMonth}|${targetDay}|${row},${col}`;
+    if (coveringsSquaresViewedRef.current.has(key)) return;
+    coveringsSquaresViewedRef.current.add(key);
+    setCoveringsSquaresViewedCount(coveringsSquaresViewedRef.current.size);
+  }, [targetMonth, targetDay]);
 
   const handleSolveHintTracked = useCallback(
     (pieces: PlacedPiece[]) => {
@@ -585,7 +599,10 @@ export default function App({
               Hints (distinct board positions): {hintsUsedCount}
             </p>
             <p className="celebration-subtitle">
-              Show Shadows: {shadowShowCount}
+              Show # of Coverings per Square clicks: {shadowShowCount}
+            </p>
+            <p className="celebration-subtitle">
+              Squares viewed (coverings): {coveringsSquaresViewedCount}
             </p>
             <button
               type="button"
@@ -626,19 +643,27 @@ export default function App({
             ?
           </button>
           <HelpHotkeys />
-          <SolverPanel
-            ref={solverRef}
-            targetMonth={targetMonth}
-            targetDay={targetDay}
-            placedPieces={placedPieces}
-            onHintRunStart={handleHintRunStart}
-            onShadowRunStart={handleShadowRunStart}
-            onSolveHint={handleSolveHintTracked}
-            onShadowAnalysis={handleShadowAnalysis}
-            shadowsVisible={shadowsVisible}
-            shadowHasData={shadowOverlay != null}
-            onShadowToggle={handleShadowToggle}
-          />
+          {isPuzzleComplete ? (
+            <StatsPanel
+              hintsUsedCount={hintsUsedCount}
+              coveringsButtonClickCount={shadowShowCount}
+              coveringsSquaresViewedCount={coveringsSquaresViewedCount}
+            />
+          ) : (
+            <SolverPanel
+              ref={solverRef}
+              targetMonth={targetMonth}
+              targetDay={targetDay}
+              placedPieces={placedPieces}
+              onHintRunStart={handleHintRunStart}
+              onShadowRunStart={handleShadowRunStart}
+              onSolveHint={handleSolveHintTracked}
+              onShadowAnalysis={handleShadowAnalysis}
+              shadowsVisible={shadowsVisible}
+              shadowHasData={shadowOverlay != null}
+              onShadowToggle={handleShadowToggle}
+            />
+          )}
         </div>
         <div className="app-left-column">
           {!competitionMode && (
@@ -674,6 +699,7 @@ export default function App({
               onPickUpPiece={handlePickUpPiece}
               shadowOverlay={shadowsVisible ? shadowOverlay : null}
               shadowsVisible={shadowsVisible}
+              onCoveringsViewed={handleCoveringsViewed}
               pieceNameById={pieceNameById}
             />
           </div>

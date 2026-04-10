@@ -203,16 +203,16 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
     }, []);
 
     const shadowToggleLabel = shadowsVisible
-      ? "Hide Shadows"
-      : "Show Shadows";
+      ? "Hide # of Coverings per Square"
+      : "Show # of Coverings per Square";
 
     return (
       <div className="solver-panel">
         <h3>Solver</h3>
 
         <p className="solver-description">
-          <strong>Hint</strong> counts how many ways the remaining pieces can
-          complete the board from the current placement.
+          <strong># of Solutions</strong> counts how many ways the remaining
+          pieces can complete the board from the current placement.
         </p>
         <div className="solver-controls">
           {status !== "solving" ? (
@@ -220,9 +220,9 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
               type="button"
               className="solver-btn solve-btn solver-btn--hint"
               onClick={startHint}
-              title="Hint"
+              title="Show # of solutions with current pieces"
             >
-              Hint (H)
+              Show # of Solutions with Current Pieces (H)
             </button>
           ) : (
             <button
@@ -237,8 +237,9 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
         </div>
 
         <p className="solver-description solver-description--shadow">
-          <strong>Shadows</strong> show how many distinct piece placements can
-          cover each square; hover or tap a cell for diagrams.
+          <strong># of Coverings per Square</strong> shows how many distinct
+          piece placements can cover each square; click a square to see the
+          possible coverings.
         </p>
         <div className="solver-controls solver-controls--secondary">
           {status !== "solving" ? (
@@ -248,10 +249,10 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
               onClick={onShadowToggle}
               title={
                 shadowsVisible
-                  ? "Hide shadow counts on the board"
+                  ? "Hide # of coverings per square on the board"
                   : shadowHasData
-                    ? "Show shadow counts (already computed)"
-                    : "Compute shadow counts and show them"
+                    ? "Show # of coverings per square (already computed)"
+                    : "Compute # of coverings per square and show it"
               }
             >
               {shadowToggleLabel} (S)

@@ -35,6 +35,7 @@ interface BoardProps {
   shadowOverlay?: ShadowAnalysisPayload | null;
   /** When true, piece placement and pickup are disabled (shadow viewing mode). */
   shadowsVisible?: boolean;
+  onCoveringsViewed?: (row: number, col: number) => void;
   pieceNameById?: Record<number, string>;
 }
 
@@ -51,17 +52,14 @@ export default function Board({
   onPickUpPiece,
   shadowOverlay,
   shadowsVisible = false,
+  onCoveringsViewed,
   pieceNameById = {},
 }: BoardProps) {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
-  const [shadowHover, setShadowHover] = useState<ShadowPanelState | null>(null);
   const [shadowPinned, setShadowPinned] = useState<ShadowPanelState | null>(
     null
   );
   const boardRootRef = useRef<HTMLDivElement>(null);
-  const shadowLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
 
   const targetSet = useMemo(() => {
     const cells = getTargetCells(targetMonth, targetDay);
@@ -125,24 +123,8 @@ export default function Board({
     return map;
   }, [preview]);
 
-  const clearShadowLeaveTimer = useCallback(() => {
-    if (shadowLeaveTimerRef.current != null) {
-      clearTimeout(shadowLeaveTimerRef.current);
-      shadowLeaveTimerRef.current = null;
-    }
-  }, []);
-
-  const scheduleShadowHoverClear = useCallback(() => {
-    clearShadowLeaveTimer();
-    shadowLeaveTimerRef.current = setTimeout(() => {
-      shadowLeaveTimerRef.current = null;
-      setShadowHover(null);
-    }, 280);
-  }, [clearShadowLeaveTimer]);
-
   useEffect(() => {
     if (!shadowOverlay) {
-      setShadowHover(null);
       setShadowPinned(null);
     }
   }, [shadowOverlay]);
@@ -165,7 +147,6 @@ export default function Board({
 
       if (!shadowsVisible && typeof cellValue === "number") {
         setShadowPinned(null);
-        setShadowHover(null);
         onPickUpPiece(cellValue, row, col);
         return;
       }
@@ -190,7 +171,6 @@ export default function Board({
           );
           if (result.valid) {
             setShadowPinned(null);
-            setShadowHover(null);
             onPlacePiece(row, col);
             return;
           }
@@ -199,13 +179,24 @@ export default function Board({
 
       const key = `${row},${col}`;
       const info = shadowMap.get(key);
-      if (shadowOverlay && info && info.count > 0) {
+      const blocked = isBlocked(row, col);
+      const isTarget = targetSet.has(`${row},${col}`);
+      const pieceId = typeof cellValue === "number" ? cellValue : null;
+      if (
+        shadowsVisible &&
+        shadowOverlay &&
+        info &&
+        info.count > 0 &&
+        !blocked &&
+        !isTarget &&
+        pieceId === null
+      ) {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        setShadowPinned((prev) =>
-          prev && prev.r === row && prev.c === col ? null : { r: row, c: col, rect }
-        );
-        setShadowHover(null);
-        clearShadowLeaveTimer();
+        setShadowPinned((prev) => {
+          const isSame = prev && prev.r === row && prev.c === col;
+          if (!isSame) onCoveringsViewed?.(row, col);
+          return isSame ? null : { r: row, c: col, rect };
+        });
       }
     },
     [
@@ -217,10 +208,11 @@ export default function Board({
       targetDay,
       shadowOverlay,
       shadowMap,
+      targetSet,
       onPickUpPiece,
       onPlacePiece,
-      clearShadowLeaveTimer,
       shadowsVisible,
+      onCoveringsViewed,
     ]
   );
 
@@ -231,44 +223,23 @@ export default function Board({
       } else {
         setHoverCell([row, col]);
       }
-      if (!shadowOverlay || shadowPinned) return;
-      const blocked = isBlocked(row, col);
-      const isTarget = targetSet.has(`${row},${col}`);
-      const pieceId = grid[row]?.[col];
-      if (blocked || isTarget || pieceId !== null) return;
-      const key = `${row},${col}`;
-      const info = shadowMap.get(key);
-      if (!info || info.count === 0) return;
-      clearShadowLeaveTimer();
-      setShadowHover({
-        r: row,
-        c: col,
-        rect: (e.currentTarget as HTMLElement).getBoundingClientRect(),
-      });
+      // Hover-based coverings preview intentionally disabled; click a square to view coverings.
+      void e;
+      return;
     },
     [
-      shadowOverlay,
-      shadowPinned,
-      targetSet,
-      grid,
-      shadowMap,
-      clearShadowLeaveTimer,
       shadowsVisible,
     ]
   );
 
   const handleMouseLeaveCell = useCallback(() => {
-    if (!shadowPinned) {
-      scheduleShadowHoverClear();
-    }
-  }, [shadowPinned, scheduleShadowHoverClear]);
+    // Hover-based coverings preview disabled; nothing to clear.
+    return;
+  }, []);
 
   const handleMouseLeaveBoard = useCallback(() => {
     setHoverCell(null);
-    if (!shadowPinned) {
-      scheduleShadowHoverClear();
-    }
-  }, [shadowPinned, scheduleShadowHoverClear]);
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -289,7 +260,7 @@ export default function Board({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedPiece, preview, hoverCell, onPlacePiece, shadowsVisible]);
 
-  const activeShadowPanel = shadowPinned ?? shadowHover;
+  const activeShadowPanel = shadowPinned;
   const activeShadowKeys =
     activeShadowPanel &&
     shadowMap.get(`${activeShadowPanel.r},${activeShadowPanel.c}`)?.keys;
@@ -386,8 +357,8 @@ export default function Board({
             shadowKeys={activeShadowKeys}
             shadowCatalog={shadowOverlay.shadowCatalog}
             pieceNameById={pieceNameById}
-            onMouseEnter={clearShadowLeaveTimer}
-            onMouseLeave={scheduleShadowHoverClear}
+            onMouseEnter={() => {}}
+            onMouseLeave={() => {}}
           />
         )}
     </div>

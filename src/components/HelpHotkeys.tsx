@@ -13,8 +13,8 @@ const HOTKEYS = [
   },
   { key: "Space", action: "Place piece (when valid)" },
   { key: "W", action: "Undo last removal" },
-  { key: "H", action: "Hint (solver)" },
-  { key: "S", action: "Show / hide shadows" },
+  { key: "H", action: "Show # of solutions with current pieces" },
+  { key: "S", action: "Show / hide # of coverings per square" },
 ];
 
 export default function HelpHotkeys() {
