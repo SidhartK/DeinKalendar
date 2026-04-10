@@ -16,10 +16,19 @@ import {
 } from "../utils/pieces";
 import "./SolverPanel.css";
 
+function formatDurationMs(ms: number) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 interface SolverPanelProps {
   targetMonth: string;
   targetDay: number;
   placedPieces: PlacedPiece[];
+  /** Elapsed time since user first saw this date (session-local). */
+  elapsedMs: number | null;
   /** Marks solver used (e.g. celebration). */
   onHintRunStart?: () => void;
   /** Clears shadow overlay while a new shadow run is in flight. */
@@ -49,6 +58,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       targetMonth,
       targetDay,
       placedPieces,
+      elapsedMs,
       onHintRunStart,
       onShadowRunStart,
       onSolveHint,
@@ -209,6 +219,15 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
     return (
       <div className="solver-panel">
         <h3>Solver</h3>
+
+        <div className="solver-results" style={{ marginBottom: 12 }}>
+          <div className="solver-stat">
+            <span className="solver-label">Time</span>
+            <span className="solver-value">
+              {elapsedMs == null ? "—" : formatDurationMs(elapsedMs)}
+            </span>
+          </div>
+        </div>
 
         <p className="solver-description">
           <strong># of Solutions</strong> counts how many ways the remaining

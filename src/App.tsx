@@ -30,7 +30,21 @@ import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import HelpHotkeys from "./components/HelpHotkeys";
 import TutorialModal from "./components/TutorialModal";
 import StatsPanel from "./components/StatsPanel";
+import initialSolutionsByDate from "./data/initial_solutions_by_date.json";
+import { gradeResult } from "./lib/grade";
 import "./App.css";
+
+function formatDurationMs(ms: number) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+type PuzzleTiming = {
+  firstSeenAt: number;
+  solvedAt: number | null;
+};
 
 interface ReducerState {
   placedPieces: PlacedPiece[];
@@ -277,6 +291,12 @@ export default function App({
     null
   );
   const [shadowsVisible, setShadowsVisible] = useState(false);
+  const puzzleTimingByDateRef = useRef<Map<string, PuzzleTiming>>(new Map());
+  const [currentElapsedMs, setCurrentElapsedMs] = useState<number | null>(null);
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "error">(
+    "idle"
+  );
+  const [initialSolutionsForDate, setInitialSolutionsForDate] = useState<number | null>(null);
 
   useEffect(() => {
     setShadowOverlay(null);
@@ -384,6 +404,106 @@ export default function App({
   const solverUsedForCurrentDate = !!solverUsedByDate[currentDateKey];
 
   useEffect(() => {
+    const now = Date.now();
+    const existing = puzzleTimingByDateRef.current.get(currentDateKey);
+    if (!existing) {
+      puzzleTimingByDateRef.current.set(currentDateKey, {
+        firstSeenAt: now,
+        solvedAt: null,
+      });
+    }
+    setCurrentElapsedMs(0);
+    setShareStatus("idle");
+  }, [currentDateKey]);
+
+  useEffect(() => {
+    const key = `${targetMonth}|${targetDay}`;
+    const S =
+      (initialSolutionsByDate as unknown as { byDateKey?: Record<string, number> })
+        .byDateKey?.[key] ?? null;
+    setInitialSolutionsForDate(typeof S === "number" ? S : null);
+  }, [targetMonth, targetDay]);
+
+  const grade =
+    initialSolutionsForDate == null
+      ? null
+      : gradeResult({
+          initialSolutions: initialSolutionsForDate,
+          hintsUsedCount,
+          shadowShowCount,
+          coveringsSquaresViewedCount,
+          timeMinutes:
+            currentElapsedMs == null ? undefined : Math.max(0, currentElapsedMs / 60000),
+        });
+
+  useEffect(() => {
+    const timing = puzzleTimingByDateRef.current.get(currentDateKey);
+    if (!timing) return;
+
+    const update = () => {
+      const end = timing.solvedAt ?? Date.now();
+      setCurrentElapsedMs(end - timing.firstSeenAt);
+    };
+
+    update();
+    if (timing.solvedAt != null) return;
+    const id = window.setInterval(update, 1000);
+    return () => window.clearInterval(id);
+  }, [currentDateKey, isPuzzleComplete]);
+
+  const handleShareResults = useCallback(async () => {
+    const timing = puzzleTimingByDateRef.current.get(currentDateKey);
+    const elapsed =
+      timing?.firstSeenAt != null
+        ? (timing.solvedAt ?? Date.now()) - timing.firstSeenAt
+        : null;
+
+    const lines = [
+      `Calendar Puzzle — ${targetMonth} ${targetDay}`,
+      grade ? `Grade: ${grade.letter} (${grade.score.toFixed(1)})` : "Grade: —",
+      elapsed != null ? `Time: ${formatDurationMs(elapsed)}` : "Time: —",
+      `Initial solutions: ${initialSolutionsForDate == null ? "—" : initialSolutionsForDate.toLocaleString()}`,
+      `Hints (distinct board positions): ${hintsUsedCount}`,
+      `Show # of Coverings per Square clicks: ${shadowShowCount}`,
+      `Squares viewed (coverings): ${coveringsSquaresViewedCount}`,
+      solverUsedForCurrentDate ? "Solver used: Yes" : "Solver used: No",
+    ];
+
+    const text = lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setShareStatus("copied");
+      window.setTimeout(() => setShareStatus("idle"), 1500);
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        setShareStatus("copied");
+        window.setTimeout(() => setShareStatus("idle"), 1500);
+      } catch {
+        setShareStatus("error");
+        window.setTimeout(() => setShareStatus("idle"), 2000);
+      }
+    }
+  }, [
+    currentDateKey,
+    targetMonth,
+    targetDay,
+    grade,
+    initialSolutionsForDate,
+    hintsUsedCount,
+    shadowShowCount,
+    coveringsSquaresViewedCount,
+    solverUsedForCurrentDate,
+  ]);
+
+  useEffect(() => {
     if (!isPuzzleComplete) {
       celebratedRef.current = false;
       return;
@@ -391,6 +511,12 @@ export default function App({
     if (celebratedRef.current) return;
     celebratedRef.current = true;
     console.log("Puzzle solved!", { targetMonth, targetDay });
+
+    const timing = puzzleTimingByDateRef.current.get(currentDateKey);
+    if (timing && timing.solvedAt == null) {
+      timing.solvedAt = Date.now();
+      puzzleTimingByDateRef.current.set(currentDateKey, timing);
+    }
 
     if (competitionMode) {
       const isNew = onSolutionFound?.(placedPieces) ?? true;
@@ -590,6 +716,19 @@ export default function App({
             <p className="celebration-subtitle">
               All pieces placed for {targetMonth} {targetDay}.
             </p>
+            <p className="celebration-subtitle">
+              Time:{" "}
+              {currentElapsedMs != null ? formatDurationMs(currentElapsedMs) : "—"}
+            </p>
+            <p className="celebration-subtitle">
+              Grade: {grade ? `${grade.letter} (${grade.score.toFixed(1)})` : "—"}
+            </p>
+            <p className="celebration-subtitle">
+              Initial solutions:{" "}
+              {initialSolutionsForDate == null
+                ? "—"
+                : initialSolutionsForDate.toLocaleString()}
+            </p>
             {!solverUsedForCurrentDate && (
               <p className="celebration-subtitle">
                 You found the solution with no help!
@@ -604,6 +743,17 @@ export default function App({
             <p className="celebration-subtitle">
               Squares viewed (coverings): {coveringsSquaresViewedCount}
             </p>
+            <button
+              type="button"
+              className="celebration-dismiss"
+              onClick={handleShareResults}
+            >
+              {shareStatus === "copied"
+                ? "Copied!"
+                : shareStatus === "error"
+                  ? "Copy failed"
+                  : "Copy results"}
+            </button>
             <button
               type="button"
               className="celebration-dismiss"
@@ -645,9 +795,15 @@ export default function App({
           <HelpHotkeys />
           {isPuzzleComplete ? (
             <StatsPanel
+              timeTakenMs={currentElapsedMs}
               hintsUsedCount={hintsUsedCount}
               coveringsButtonClickCount={shadowShowCount}
               coveringsSquaresViewedCount={coveringsSquaresViewedCount}
+              initialSolutions={initialSolutionsForDate}
+              gradeLetter={grade?.letter ?? null}
+              gradeScore={grade?.score ?? null}
+              onShare={handleShareResults}
+              shareStatus={shareStatus}
             />
           ) : (
             <SolverPanel
@@ -655,6 +811,7 @@ export default function App({
               targetMonth={targetMonth}
               targetDay={targetDay}
               placedPieces={placedPieces}
+              elapsedMs={currentElapsedMs}
               onHintRunStart={handleHintRunStart}
               onShadowRunStart={handleShadowRunStart}
               onSolveHint={handleSolveHintTracked}

@@ -5,3 +5,5 @@ tsconfig.tsbuildinfo
 out
 
 .env.local
+
+scripts/data/
