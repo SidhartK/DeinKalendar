@@ -11,6 +11,15 @@
   box-sizing: border-box;
 }
 
+.piece-tray--shadows-visible .piece-grid .piece-preview:not(.placed) {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.piece-tray--shadows-visible .piece-grid .piece-name {
+  opacity: 0.85;
+}
+
 .tray-header {
   display: flex;
   flex-direction: row;

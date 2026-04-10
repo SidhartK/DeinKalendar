@@ -33,9 +33,9 @@ interface BoardProps {
   onPlacePiece: (row: number, col: number) => void;
   onPickUpPiece: (pieceId: number, row: number, col: number) => void;
   shadowOverlay?: ShadowAnalysisPayload | null;
+  /** When true, piece placement and pickup are disabled (shadow viewing mode). */
+  shadowsVisible?: boolean;
   pieceNameById?: Record<number, string>;
-  /** Empty cells with a single (piece, orientation) across all solutions (hint). */
-  forcedHintCells?: Set<string>;
 }
 
 type ShadowPanelState = { r: number; c: number; rect: DOMRect };
@@ -50,8 +50,8 @@ export default function Board({
   onPlacePiece,
   onPickUpPiece,
   shadowOverlay,
+  shadowsVisible = false,
   pieceNameById = {},
-  forcedHintCells,
 }: BoardProps) {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
   const [shadowHover, setShadowHover] = useState<ShadowPanelState | null>(null);
@@ -163,14 +163,18 @@ export default function Board({
     (row: number, col: number, e: React.MouseEvent<HTMLDivElement>) => {
       const cellValue = grid[row]?.[col];
 
-      if (typeof cellValue === "number") {
+      if (!shadowsVisible && typeof cellValue === "number") {
         setShadowPinned(null);
         setShadowHover(null);
         onPickUpPiece(cellValue, row, col);
         return;
       }
 
-      if (selectedPiece && selectedAnchorCoord) {
+      if (
+        !shadowsVisible &&
+        selectedPiece &&
+        selectedAnchorCoord
+      ) {
         const orientation = selectedPiece.orientations[selectedOrientation];
         if (orientation) {
           const [baseR, baseC] = selectedAnchorCoord;
@@ -216,12 +220,17 @@ export default function Board({
       onPickUpPiece,
       onPlacePiece,
       clearShadowLeaveTimer,
+      shadowsVisible,
     ]
   );
 
   const handleMouseEnterCell = useCallback(
     (row: number, col: number, e: React.MouseEvent<HTMLDivElement>) => {
-      setHoverCell([row, col]);
+      if (shadowsVisible) {
+        setHoverCell(null);
+      } else {
+        setHoverCell([row, col]);
+      }
       if (!shadowOverlay || shadowPinned) return;
       const blocked = isBlocked(row, col);
       const isTarget = targetSet.has(`${row},${col}`);
@@ -244,6 +253,7 @@ export default function Board({
       grid,
       shadowMap,
       clearShadowLeaveTimer,
+      shadowsVisible,
     ]
   );
 
@@ -265,14 +275,19 @@ export default function Board({
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
       if (e.key === " ") {
         e.preventDefault();
-        if (selectedPiece && preview?.valid && hoverCell) {
+        if (
+          !shadowsVisible &&
+          selectedPiece &&
+          preview?.valid &&
+          hoverCell
+        ) {
           onPlacePiece(hoverCell[0], hoverCell[1]);
         }
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedPiece, preview, hoverCell, onPlacePiece]);
+  }, [selectedPiece, preview, hoverCell, onPlacePiece, shadowsVisible]);
 
   const activeShadowPanel = shadowPinned ?? shadowHover;
   const activeShadowKeys =
@@ -283,7 +298,7 @@ export default function Board({
     <div className="board-wrap">
       <div
         ref={boardRootRef}
-        className="board"
+        className={`board${shadowsVisible ? " board--shadows-visible" : ""}`}
         onMouseLeave={handleMouseLeaveBoard}
       >
         {Array.from({ length: GRID_ROWS }, (_, row) => (
@@ -307,17 +322,12 @@ export default function Board({
                 !previewInfo;
               const shadowUnique =
                 showShadowBadge && shadowInfo.count === 1;
-              const forcedHint =
-                (forcedHintCells?.has(cellKey) ?? false) &&
-                pieceId === null &&
-                !blocked &&
-                !isTarget;
 
               let className = "board-cell";
               if (blocked) className += " blocked";
               if (isTarget) className += " target";
               if (pieceId !== null) className += " occupied";
-              if ((forcedHint || shadowUnique) && !previewInfo) {
+              if (shadowUnique && !previewInfo) {
                 className += " solver-highlight-cell";
               }
               if (previewInfo) {

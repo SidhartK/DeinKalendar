@@ -87,6 +87,16 @@
   filter: brightness(1.2);
 }
 
+.board--shadows-visible .board-cell.occupied {
+  cursor: not-allowed;
+}
+
+.board--shadows-visible .board-cell.occupied:hover:not(.target) {
+  transform: none;
+  filter: none;
+  box-shadow: none;
+}
+
 .board-cell.preview-valid {
   cursor: pointer;
 }

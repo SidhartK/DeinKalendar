@@ -8,11 +8,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import type {
-  PlacedPiece,
-  ShadowAnalysisPayload,
-  ForcedHintCell,
-} from "../types";
+import type { PlacedPiece, ShadowAnalysisPayload } from "../types";
 import {
   getPieces,
   getUniqueOrientations,
@@ -24,13 +20,12 @@ interface SolverPanelProps {
   targetMonth: string;
   targetDay: number;
   placedPieces: PlacedPiece[];
-  /** Clears hint highlights; marks solver used (e.g. celebration). */
+  /** Marks solver used (e.g. celebration). */
   onHintRunStart?: () => void;
   /** Clears shadow overlay while a new shadow run is in flight. */
   onShadowRunStart?: () => void;
   onSolveHint?: (placedPieces: PlacedPiece[]) => void;
   onShadowAnalysis?: (payload: ShadowAnalysisPayload) => void;
-  onForcedHintCells?: (cells: ForcedHintCell[]) => void;
   /** Whether shadow counts are currently shown on the board. */
   shadowsVisible: boolean;
   /** True if the last shadow run produced data for the current board. */
@@ -58,7 +53,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       onShadowRunStart,
       onSolveHint,
       onShadowAnalysis,
-      onForcedHintCells,
       shadowsVisible,
       shadowHasData,
       onShadowToggle,
@@ -71,9 +65,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
     const runModeRef = useRef<RunMode>("hint");
     const onShadowAnalysisRef = useRef(onShadowAnalysis);
     onShadowAnalysisRef.current = onShadowAnalysis;
-    const onForcedHintCellsRef = useRef(onForcedHintCells);
-    onForcedHintCellsRef.current = onForcedHintCells;
-
     const cleanup = useCallback(() => {
       if (workerRef.current) {
         workerRef.current.terminate();
@@ -107,7 +98,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
             totalCount?: number;
             shadowCatalog?: ShadowAnalysisPayload["shadowCatalog"];
             shadowCells?: ShadowAnalysisPayload["shadowCells"];
-            singletonCells?: ForcedHintCell[];
             cancelled?: boolean;
           };
           if (msg.type === "progress") {
@@ -125,12 +115,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
                 shadowCatalog: msg.shadowCatalog,
                 shadowCells: msg.shadowCells,
               });
-            }
-            if (
-              Array.isArray(msg.singletonCells) &&
-              runModeRef.current === "hint"
-            ) {
-              onForcedHintCellsRef.current?.(msg.singletonCells);
             }
           }
         };
@@ -183,7 +167,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
           })),
           initialPlacements,
           collectShadowData: mode === "shadow",
-          collectSingletonHints: mode === "hint",
         });
       },
       [
@@ -228,8 +211,8 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
         <h3>Solver</h3>
 
         <p className="solver-description">
-          <strong>Hint</strong> counts solutions and highlights empty cells that
-          are forced to a single piece orientation across all completions.
+          <strong>Hint</strong> counts how many ways the remaining pieces can
+          complete the board from the current placement.
         </p>
         <div className="solver-controls">
           {status !== "solving" ? (

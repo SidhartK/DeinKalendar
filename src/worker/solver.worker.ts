@@ -130,8 +130,7 @@ self.addEventListener("message", (e: MessageEvent) => {
       initialPlacements,
       cache,
       statesForDate,
-      Boolean(msg.collectShadowData),
-      Boolean(msg.collectSingletonHints)
+      Boolean(msg.collectShadowData)
     );
   }
 });
@@ -143,21 +142,14 @@ function runSolver(
   initialPlacements: InitialPlacement[],
   cache: StateCache,
   statesForDate: number,
-  collectShadowData: boolean,
-  collectSingletonHints: boolean
+  collectShadowData: boolean
 ) {
   const targets = getTargetCells(targetMonth, targetDay);
   const targetSet = new Set(targets.map(([r, c]) => `${r},${c}`));
 
-  const heavyCollection = collectShadowData || collectSingletonHints;
+  const heavyCollection = collectShadowData;
 
   const shadowCellSets: Set<string>[][] | null = collectShadowData
-    ? Array.from({ length: GRID_ROWS }, () =>
-        Array.from({ length: GRID_COLS }, () => new Set<string>())
-      )
-    : null;
-
-  const singletonPairSets: Set<string>[][] | null = collectSingletonHints
     ? Array.from({ length: GRID_ROWS }, () =>
         Array.from({ length: GRID_COLS }, () => new Set<string>())
       )
@@ -208,18 +200,6 @@ function runSolver(
       }
     }
 
-    const singletonCells: { r: number; c: number }[] = [];
-    if (!cancelled && collectSingletonHints && singletonPairSets) {
-      for (let r = 0; r < GRID_ROWS; r++) {
-        for (let c = 0; c < GRID_COLS; c++) {
-          if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
-          if (singletonPairSets[r][c].size === 1) {
-            singletonCells.push({ r, c });
-          }
-        }
-      }
-    }
-
     sendMessage({
       type: "done",
       totalCount,
@@ -228,25 +208,7 @@ function runSolver(
       ...(collectShadowData
         ? { shadowCatalog: shadowCatalogOut, shadowCells }
         : {}),
-      ...(collectSingletonHints ? { singletonCells } : {}),
     });
-  }
-
-  function recordLeafSingletonHints(): void {
-    if (!collectSingletonHints || !singletonPairSets) return;
-    for (const pl of placementStack) {
-      const piece = pieces[pl.pi];
-      const orient = piece.orientations[pl.oi];
-      if (!orient) continue;
-      const pairKey = `${pl.pi},${pl.oi}`;
-      for (const [dr, dc] of orient.cells) {
-        const r = pl.anchorR + dr;
-        const c = pl.anchorC + dc;
-        if (r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS) {
-          singletonPairSets[r][c].add(pairKey);
-        }
-      }
-    }
   }
 
   function recordLeafShadows(): void {
@@ -465,7 +427,6 @@ function runSolver(
       const localCount = 1;
       solutionCount += localCount;
       recordLeafShadows();
-      recordLeafSingletonHints();
       const now = performance.now();
       if (now - lastReportTime > 100) {
         sendMessage({ type: "progress", count: solutionCount });

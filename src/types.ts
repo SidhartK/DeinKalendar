@@ -80,9 +80,6 @@ export interface ShadowAnalysisPayload {
   shadowCells: ShadowCellInfo[];
 }
 
-/** Cell with exactly one (piece index, orientation) across all solutions (hint). */
-export type ForcedHintCell = { r: number; c: number };
-
 export const PIECE_COLORS: Record<number, string> = {
   1: "#e74c3c",
   2: "#3498db",

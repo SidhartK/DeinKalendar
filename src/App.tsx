@@ -7,13 +7,10 @@ import {
   PlacedPiece,
   GameAction,
   type ShadowAnalysisPayload,
-  type ForcedHintCell,
 } from "./types";
 import {
   createEmptyGrid,
   isBoardComplete,
-  isBlocked,
-  getTargetCells,
 } from "./utils/board";
 import {
   getPieces,
@@ -275,14 +272,10 @@ export default function App({
     null
   );
   const [shadowsVisible, setShadowsVisible] = useState(false);
-  const [forcedHintCells, setForcedHintCells] = useState<Set<string>>(
-    () => new Set()
-  );
 
   useEffect(() => {
     setShadowOverlay(null);
     setShadowsVisible(false);
-    setForcedHintCells(new Set());
   }, [placedPieces, targetMonth, targetDay]);
 
   useEffect(() => {
@@ -298,24 +291,7 @@ export default function App({
     setShadowsVisible(true);
   }, []);
 
-  const handleForcedHintCells = useCallback(
-    (cells: ForcedHintCell[]) => {
-      const targetSet = new Set(
-        getTargetCells(targetMonth, targetDay).map(([r, c]) => `${r},${c}`)
-      );
-      const next = new Set<string>();
-      for (const { r, c } of cells) {
-        if (isBlocked(r, c) || targetSet.has(`${r},${c}`)) continue;
-        if (grid[r]?.[c] !== null) continue;
-        next.add(`${r},${c}`);
-      }
-      setForcedHintCells(next);
-    },
-    [grid, targetMonth, targetDay]
-  );
-
   const handleHintRunStart = useCallback(() => {
-    setForcedHintCells(new Set());
     const key = `${targetMonth}|${targetDay}`;
     setSolverUsedByDate((prev) => ({
       ...prev,
@@ -659,7 +635,6 @@ export default function App({
             onShadowRunStart={handleShadowRunStart}
             onSolveHint={handleSolveHintTracked}
             onShadowAnalysis={handleShadowAnalysis}
-            onForcedHintCells={handleForcedHintCells}
             shadowsVisible={shadowsVisible}
             shadowHasData={shadowOverlay != null}
             onShadowToggle={handleShadowToggle}
@@ -698,8 +673,8 @@ export default function App({
               onPlacePiece={handlePlacePiece}
               onPickUpPiece={handlePickUpPiece}
               shadowOverlay={shadowsVisible ? shadowOverlay : null}
+              shadowsVisible={shadowsVisible}
               pieceNameById={pieceNameById}
-              forcedHintCells={forcedHintCells}
             />
           </div>
         </div>
@@ -715,6 +690,7 @@ export default function App({
             onRestoreLastRemoved={handleRestoreLastRemoved}
             onSolve={handleSolve}
             onShadowToggle={handleShadowToggle}
+            shadowsVisible={shadowsVisible}
           />
         </div>
       </main>

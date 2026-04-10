@@ -22,6 +22,8 @@ interface PieceTrayProps {
   onRestoreLastRemoved: () => void;
   onSolve: () => void;
   onShadowToggle: () => void;
+  /** When true, piece selection and orientation controls are disabled. */
+  shadowsVisible: boolean;
 }
 
 export default function PieceTray({
@@ -35,6 +37,7 @@ export default function PieceTray({
   onRestoreLastRemoved,
   onSolve,
   onShadowToggle,
+  shadowsVisible,
 }: PieceTrayProps) {
   const selectedPiece = pieces.find((p) => p.id === selectedPieceId) ?? null;
 
@@ -56,6 +59,16 @@ export default function PieceTray({
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (shadowsVisible) {
+        if (e.key === "h" || e.key === "H") {
+          e.preventDefault();
+          onSolve();
+        } else if (e.key === "s" || e.key === "S") {
+          e.preventDefault();
+          onShadowToggle();
+        }
+        return;
+      }
       const num = parseInt(e.key, 10);
       if (num >= 1 && num <= 8) {
         const piece = pieces.find((p) => p.id === num);
@@ -107,10 +120,11 @@ export default function PieceTray({
     onRestoreLastRemoved,
     onSolve,
     onShadowToggle,
+    shadowsVisible,
   ]);
 
   return (
-    <div className="piece-tray">
+    <div className={`piece-tray${shadowsVisible ? " piece-tray--shadows-visible" : ""}`}>
       <div className="tray-header">
         <h3 className="tray-title">Pieces</h3>
         <button
@@ -118,13 +132,17 @@ export default function PieceTray({
           className="control-btn deselect-btn"
           onClick={() => onSelectPiece(null)}
           title="Deselect (Q)"
-          disabled={!selectedPieceId}
+          disabled={!selectedPieceId || shadowsVisible}
         >
           Deselect (Q)
         </button>
       </div>
 
-      <div className="piece-grid">
+      <div
+        className="piece-grid"
+        aria-disabled={shadowsVisible}
+        aria-label={shadowsVisible ? "Piece controls disabled while shadows are shown" : undefined}
+      >
         {pieces.map((piece) => {
           const isPlaced = placedPieceIds.has(piece.id);
           return (
@@ -139,7 +157,7 @@ export default function PieceTray({
                 isSelected={piece.id === selectedPieceId}
                 isPlaced={isPlaced}
                 onClick={
-                  isPlaced
+                  isPlaced || shadowsVisible
                     ? undefined
                     : () => {
                         if (piece.id === selectedPieceId) {
@@ -160,6 +178,7 @@ export default function PieceTray({
                 <button
                   type="button"
                   className="slot-flip-btn"
+                  disabled={shadowsVisible}
                   onClick={() => {
                     if (piece.id === selectedPieceId) {
                       flip();
