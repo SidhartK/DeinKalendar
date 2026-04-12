@@ -9,6 +9,7 @@ import {
   type ShadowCatalogEntry,
 } from "../types";
 import { getLabelAt, isBlocked } from "../utils/board";
+import { eventTargetIsTypingField } from "../utils/keyboard";
 import "./ShadowCellPopover.css";
 
 function MiniPlacementGrid({
@@ -75,13 +76,7 @@ export default function ShadowCellPopover({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
-      ) {
-        return;
-      }
+      if (eventTargetIsTypingField(e.target)) return;
       e.preventDefault();
       onClose();
     };

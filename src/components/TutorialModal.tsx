@@ -27,10 +27,10 @@ const ORIENT_AFTER_ROT2 = 5;
 const ORIENT_AFTER_FLIP = 1;
 
 // step 0:  empty board
-// step 1:  piece selected at orientation 7, cursor pulsing
-// step 2:  cursor clicks piece → rotates to 6
-// step 3:  cursor clicks piece again → rotates to 5
-// step 4:  cursor slides down, clicks Flip button → flips to 1
+// step 1:  piece selected at orientation 7
+// step 2:  rotate-CW button “pressed” → orientation 6
+// step 3:  rotate-CW again → orientation 5
+// step 4:  flip-horizontal button “pressed” → orientation 1
 // step 5:  piece placed on board
 // step 6–12: remaining 7 pieces fast-forward
 // step 13: complete / pause before loop
@@ -38,9 +38,9 @@ const ORIENT_AFTER_FLIP = 1;
 const CAPTIONS = [
   "Goal: leave Jan and 1 uncovered",
   "Select a piece from the tray\u2026",
-  "Click to rotate",
-  "Click again to keep rotating",
-  "Use Flip to mirror the piece",
+  "Rotate clockwise with the first button",
+  "Rotate clockwise again",
+  "Flip horizontally with the third button",
   "Click the board to place it",
   "Fill in the rest of the pieces",
   "", "", "", "", "", "",
@@ -154,10 +154,9 @@ export default function TutorialModal({ open, onClose }: TutorialModalProps) {
     step === 3 ? ORIENT_AFTER_ROT2 :
     ORIENT_AFTER_FLIP;
 
-  const isRotating1 = step === 2;
-  const isRotating2 = step === 3;
-  const isFlipping = step === 4;
-  const cursorAtPiece = step >= 1 && step <= 3;
+  const isRotateCW1 = step === 2;
+  const isRotateCW2 = step === 3;
+  const isFlipH = step === 4;
 
   return (
     <div className="tutorial-backdrop" onClick={handleBackdropClick}>
@@ -177,37 +176,46 @@ export default function TutorialModal({ open, onClose }: TutorialModalProps) {
         <div className="tutorial-body">
           {showPieceDemo && (
             <div className="tutorial-piece-demo">
-              <div
-                className={`tutorial-piece-wrapper ${isRotating1 || isRotating2 ? "rotate-click" : ""}`}
-                key={isRotating1 ? "r1" : isRotating2 ? "r2" : "idle"}
-              >
+              <div className="tutorial-piece-wrapper">
                 <MiniPiecePreview
                   key={demoOrientIndex}
                   pieceId={DEMO_PIECE.pieceId}
                   orientationIndex={demoOrientIndex}
                 />
-                {cursorAtPiece && (
-                  <span
-                    className={`tutorial-cursor-icon ${isRotating1 || isRotating2 ? "clicking" : ""}`}
-                    key={isRotating1 ? "c1" : isRotating2 ? "c2" : "c0"}
-                  >
-                    <CursorSvg />
-                  </span>
-                )}
               </div>
-              <div className="tutorial-flip-row">
-                <button
-                  type="button"
-                  className={`tutorial-flip-btn ${isFlipping ? "pressed" : ""}`}
-                  tabIndex={-1}
-                >
-                  ↔ Flip
-                </button>
-                {isFlipping && (
-                  <span className="tutorial-cursor-icon slide-to-flip">
-                    <CursorSvg />
-                  </span>
-                )}
+              <div className="tutorial-transform-wrap">
+                <div className="tutorial-transform-bar" aria-hidden="true">
+                  <button
+                    type="button"
+                    key={step >= 2 && step <= 3 ? `tutorial-cw-${step}` : "tutorial-cw"}
+                    className={`tutorial-tbtn ${isRotateCW1 || isRotateCW2 ? "pressed" : ""}`}
+                    tabIndex={-1}
+                  >
+                    <span className="tutorial-tbtn__glyph" aria-hidden="true">
+                      ↻
+                    </span>
+                  </button>
+                  <button type="button" className="tutorial-tbtn" tabIndex={-1}>
+                    <span className="tutorial-tbtn__glyph" aria-hidden="true">
+                      ↺
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    key={step === 4 ? "tutorial-flip-h" : "tutorial-flip-idle"}
+                    className={`tutorial-tbtn ${isFlipH ? "pressed" : ""}`}
+                    tabIndex={-1}
+                  >
+                    <span className="tutorial-tbtn__glyph" aria-hidden="true">
+                      ↔
+                    </span>
+                  </button>
+                  <button type="button" className="tutorial-tbtn" tabIndex={-1}>
+                    <span className="tutorial-tbtn__glyph" aria-hidden="true">
+                      ↕
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -309,17 +317,3 @@ function MiniPiecePreview({
   );
 }
 
-function CursorSvg() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="#222"
-      stroke="#fff"
-      strokeWidth="1"
-    >
-      <path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.87a.5.5 0 0 0 .35-.85L6.35 2.86a.5.5 0 0 0-.85.35z" />
-    </svg>
-  );
-}

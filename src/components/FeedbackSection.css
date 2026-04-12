@@ -1,0 +1,196 @@
+/* Shared with Pi Day finished screen and main calendar (/, /today). */
+
+.pi-feedback {
+  width: 100%;
+  max-width: 560px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.pi-feedback-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--pi-accent, #e8b4f8);
+  margin: 0;
+}
+
+.pi-feedback-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pi-feedback-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  padding: 12px 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+  outline: none;
+}
+
+.pi-feedback-textarea:focus {
+  border-color: rgba(232, 180, 248, 0.5);
+}
+
+.pi-feedback-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.pi-feedback-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Matches Pi `.pi-start-btn.pi-start-btn--secondary` used on the competition page */
+.pi-feedback-send {
+  align-self: flex-end;
+  padding: 14px 40px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 4px 20px rgba(46, 204, 113, 0.35);
+}
+
+.pi-feedback-send:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(46, 204, 113, 0.45);
+}
+
+.pi-feedback-send:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(46, 204, 113, 0.3);
+}
+
+.pi-feedback-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 20px rgba(46, 204, 113, 0.2);
+}
+
+.pi-feedback-submitted {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.pi-feedback-success {
+  font-size: 15px;
+  color: #a8f0c6;
+  margin: 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.pi-feedback-more-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.pi-feedback-more-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.pi-feedback-error {
+  font-size: 13px;
+  color: #f87171;
+  margin: 0;
+}
+
+/* ── Light background (main app) ───────────────────────────── */
+.pi-feedback--light {
+  margin-top: 40px;
+  background: linear-gradient(145deg, #fafbfc 0%, #fff 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.pi-feedback--light .pi-feedback-title {
+  background: linear-gradient(135deg, #e74c3c, #3498db);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.pi-feedback--light .pi-feedback-subtitle {
+  color: #555;
+}
+
+.pi-feedback--light .pi-feedback-textarea {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #222;
+}
+
+.pi-feedback--light .pi-feedback-textarea:focus {
+  border-color: rgba(52, 152, 219, 0.55);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.pi-feedback--light .pi-feedback-textarea::placeholder {
+  color: #999;
+}
+
+.pi-feedback--light .pi-feedback-success {
+  color: #1e8449;
+}
+
+.pi-feedback--light .pi-feedback-more-btn {
+  color: #666;
+}
+
+.pi-feedback--light .pi-feedback-more-btn:hover {
+  color: #222;
+}
+
+.pi-feedback--light .pi-feedback-error {
+  color: #c0392b;
+}
+
+@media (max-width: 640px) {
+  .pi-feedback {
+    padding: 20px 18px;
+  }
+
+  .pi-feedback--light {
+    margin-top: 28px;
+  }
+
+  .pi-feedback-send {
+    padding: 12px 28px;
+    font-size: 16px;
+    width: 100%;
+    align-self: stretch;
+    text-align: center;
+  }
+}

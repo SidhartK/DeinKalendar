@@ -9,6 +9,7 @@ import {
   flipOrientationVertically,
 } from "../utils/pieces";
 import PiecePreview from "./PiecePreview";
+import { eventTargetIsTypingField } from "../utils/keyboard";
 import "./PieceTray.css";
 
 interface PieceTrayProps {
@@ -66,7 +67,7 @@ export default function PieceTray({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (eventTargetIsTypingField(e.target)) return;
       if (shadowsVisible) {
         if (e.key === "v" || e.key === "V") {
           e.preventDefault();

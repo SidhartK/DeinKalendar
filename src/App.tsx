@@ -26,6 +26,7 @@ import {
   placePieceOnGrid,
 } from "./utils/validation";
 import { makePuzzleKey } from "./utils/puzzleKey";
+import { eventTargetIsTypingField } from "./utils/keyboard";
 import Board from "./components/Board";
 import PieceTray from "./components/PieceTray";
 import DateSelector from "./components/DateSelector";
@@ -33,6 +34,7 @@ import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import HelpHotkeys from "./components/HelpHotkeys";
 import TutorialModal from "./components/TutorialModal";
 import StatsPanel from "./components/StatsPanel";
+import FeedbackSection from "./components/FeedbackSection";
 import { hasSeenHowToPlay, markHowToPlaySeen } from "./lib/howToPlayStorage";
 import initialSolutionsByDate from "./data/initial_solutions_by_date.json";
 import "./App.css";
@@ -214,6 +216,8 @@ interface AppProps {
   openTutorialOnMount?: boolean;
   /** Called when the user closes the tutorial if it was auto-opened via openTutorialOnMount (e.g. to start the competition timer). */
   onInitialTutorialClose?: () => void;
+  /** When false, hides the bottom feedback form (e.g. /pi-day). Default true for / and /today. */
+  showSiteFeedback?: boolean;
 }
 
 export default function App({
@@ -224,6 +228,7 @@ export default function App({
   onSolveHint,
   openTutorialOnMount = false,
   onInitialTutorialClose,
+  showSiteFeedback = true,
 }: AppProps) {
   const pieces = useMemo(() => getPieces(), []);
   const solverRef = useRef<SolverPanelRef>(null);
@@ -581,6 +586,7 @@ export default function App({
     celebrationDismissBtnRef.current?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (eventTargetIsTypingField(e.target)) return;
       if (e.key !== "Enter") return;
       e.preventDefault();
       e.stopPropagation();
@@ -628,7 +634,7 @@ export default function App({
   // the event when in move mode.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (eventTargetIsTypingField(e.target)) return;
       if (selectedPieceId == null || hoverCell == null) return;
 
       let dr = 0, dc = 0;
@@ -918,6 +924,9 @@ export default function App({
           />
         </div>
       </main>
+      {!competitionMode && showSiteFeedback ? (
+        <FeedbackSection theme="light" />
+      ) : null}
     </div>
   );
 }

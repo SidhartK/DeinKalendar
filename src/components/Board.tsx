@@ -20,6 +20,7 @@ import {
 import { getLabelAt, isBlocked, getTargetCells } from "../utils/board";
 import { getAbsoluteCells } from "../utils/pieces";
 import { validatePlacement } from "../utils/validation";
+import { eventTargetIsTypingField } from "../utils/keyboard";
 import ShadowCellPopover from "./ShadowCellPopover";
 import "./Board.css";
 
@@ -244,7 +245,7 @@ export default function Board({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (eventTargetIsTypingField(e.target)) return;
       if (e.key === "Enter") {
         e.preventDefault();
         if (

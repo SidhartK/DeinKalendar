@@ -8,6 +8,7 @@ import { getPieceById, getSolverOrientationIndex } from "../utils/pieces";
 import { validatePlacement, placePieceOnGrid } from "../utils/validation";
 import { makePuzzleKey } from "../utils/puzzleKey";
 import SolutionHistory from "./SolutionHistory";
+import FeedbackSection from "./FeedbackSection";
 import "./PiDayCompetition.css";
 
 type CompetitionState = "countdown" | "username" | "ready" | "active" | "finished";
@@ -289,10 +290,6 @@ export default function PiDayCompetition() {
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
   const [visibilityLoading, setVisibilityLoading] = useState(false);
 
-  // Feedback
-  const [feedbackText, setFeedbackText] = useState("");
-  const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "submitting" | "submitted" | "error">("idle");
-
   // When true, we auto-show the tutorial and don't start the timer until the user dismisses it
   const [initialTutorialDismissed, setInitialTutorialDismissed] = useState(false);
 
@@ -484,30 +481,8 @@ export default function PiDayCompetition() {
   const handlePlayAgain = useCallback(() => {
     skipSubmissionRef.current = false;
     setRedirectedToLeaderboard(false);
-    setFeedbackText("");
-    setFeedbackStatus("idle");
     setCompetitionState("ready");
   }, []);
-
-  const handleFeedbackSubmit = useCallback(async () => {
-    const trimmed = feedbackText.trim();
-    if (!trimmed) return;
-    setFeedbackStatus("submitting");
-    try {
-      const res = await fetch("/api/competition/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: usernameRef.current || null, feedback: trimmed }),
-      });
-      if (res.ok) {
-        setFeedbackStatus("submitted");
-      } else {
-        setFeedbackStatus("error");
-      }
-    } catch {
-      setFeedbackStatus("error");
-    }
-  }, [feedbackText]);
 
   const handleVisibilityToggle = useCallback(async () => {
     const newValue = !showOnLeaderboard;
@@ -927,50 +902,7 @@ export default function PiDayCompetition() {
             )}
           </div>
 
-          <div className="pi-feedback">
-            <h2 className="pi-feedback-title">Share Your Thoughts</h2>
-            <p className="pi-feedback-subtitle">
-              Please give me feedback so that I can grow from a pi into a pie. 
-            </p>
-            {feedbackStatus === "submitted" ? (
-              <div className="pi-feedback-submitted">
-                <p className="pi-feedback-success">Thanks for the feedback!</p>
-                <button
-                  className="pi-feedback-more-btn"
-                  onClick={() => {
-                    setFeedbackText("");
-                    setFeedbackStatus("idle");
-                  }}
-                >
-                  Leave more feedback
-                </button>
-              </div>
-            ) : (
-              <>
-                <textarea
-                  className="pi-feedback-textarea"
-                  placeholder="Write your feedback here…"
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  disabled={feedbackStatus === "submitting"}
-                  maxLength={2000}
-                  rows={4}
-                />
-                {feedbackStatus === "error" && (
-                  <p className="pi-feedback-error" role="alert">
-                    Something went wrong — please try again.
-                  </p>
-                )}
-                <button
-                  className="pi-start-btn pi-start-btn--secondary pi-feedback-submit"
-                  onClick={handleFeedbackSubmit}
-                  disabled={feedbackStatus === "submitting" || !feedbackText.trim()}
-                >
-                  {feedbackStatus === "submitting" ? "Sending…" : "Send Feedback"}
-                </button>
-              </>
-            )}
-          </div>
+          <FeedbackSection username={currentUsername} theme="dark" />
         </div>
       </div>
     );
