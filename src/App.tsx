@@ -29,6 +29,7 @@ import { makePuzzleKey } from "./utils/puzzleKey";
 import { eventTargetIsTypingField } from "./utils/keyboard";
 import Board from "./components/Board";
 import PieceTray from "./components/PieceTray";
+import PieceTransformControls from "./components/PieceTransformControls";
 import DateSelector from "./components/DateSelector";
 import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import HelpHotkeys from "./components/HelpHotkeys";
@@ -866,6 +867,16 @@ export default function App({
             />
           )}
         </div>
+        <div className="app-transform-desktop" aria-label="Piece orientation">
+          <PieceTransformControls
+            pieces={pieces}
+            selectedPieceId={selectedPieceId}
+            selectedOrientation={selectedOrientation}
+            onSetOrientation={handleSetOrientation}
+            shadowsVisible={shadowsVisible}
+            className="piece-transform-controls--desktop-between"
+          />
+        </div>
         <div className="app-left-column">
           {!competitionMode && (
           <div className="app-panel app-panel--date">
@@ -878,6 +889,14 @@ export default function App({
           </div>
           )}
           <div className="help-tutorial-mobile">
+            <PieceTransformControls
+              pieces={pieces}
+              selectedPieceId={selectedPieceId}
+              selectedOrientation={selectedOrientation}
+              onSetOrientation={handleSetOrientation}
+              shadowsVisible={shadowsVisible}
+              className="piece-transform-controls--mobile-top"
+            />
             <button
               type="button"
               className="help-tutorial-trigger"

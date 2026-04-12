@@ -118,13 +118,6 @@
   z-index: 2;
 }
 
-.transform-placeholder {
-  height: 2px;
-  width: 100%;
-  border-radius: 1px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .transform-buttons {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -227,6 +220,28 @@
 
 .transform-btn:active {
   transform: scale(0.96);
+}
+
+.transform-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  background: #1a2744;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(224, 224, 224, 0.55);
+}
+
+.transform-btn:disabled .transform-btn__kbd-hint {
+  color: rgba(255, 255, 255, 0.35);
+  text-shadow: none;
+}
+
+.transform-btn:disabled:hover {
+  background: #1a2744;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.transform-btn:disabled:active {
+  transform: none;
 }
 
 .all-placed {

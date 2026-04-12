@@ -32,7 +32,7 @@
 .app-main {
   display: grid;
   grid-template-columns: 1fr minmax(280px, 320px);
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr;
   gap: 28px;
   align-items: start;
 }
@@ -66,6 +66,15 @@
   align-self: stretch;
 }
 
+/* Desktop: rotate/flip strip between solver (or stats) and piece tray */
+.app-transform-desktop {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  width: 100%;
+  container-type: inline-size;
+}
+
 .app-panel--board {
   display: flex;
   flex-direction: column;
@@ -75,7 +84,8 @@
 
 .app-panel--pieces {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 3;
+  min-height: 0;
 }
 
 /* Solver panel fills its cell height on desktop */
@@ -175,6 +185,10 @@
 }
 
 @media (max-width: 640px) {
+  .app-transform-desktop {
+    display: none;
+  }
+
   .app {
     padding: 16px;
   }
@@ -288,13 +302,29 @@
 
   .help-tutorial-mobile {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin-bottom: 14px;
+    width: 100%;
+  }
+
+  .help-tutorial-mobile .piece-transform-controls--mobile-top {
+    flex: 1;
+    min-width: 0;
+    container-type: inline-size;
+  }
+
+  /* Touch UI: hide keyboard shortcut hints (R, E) */
+  .help-tutorial-mobile .transform-btn__kbd-hint {
+    display: none;
   }
 
   .help-tutorial-mobile .help-tutorial-trigger {
     position: static;
     top: auto;
     right: auto;
+    flex-shrink: 0;
   }
 }
