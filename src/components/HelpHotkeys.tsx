@@ -13,7 +13,7 @@ const HOTKEYS = [
   },
   { key: "Space", action: "Place piece (when valid)" },
   { key: "W", action: "Undo last removal" },
-  { key: "H", action: "Show # of solutions with current pieces" },
+  { key: "H", action: "Show # of solutions possible" },
   { key: "S", action: "Show / hide # of coverings per square" },
 ];
 

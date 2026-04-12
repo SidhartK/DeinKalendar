@@ -16,7 +16,7 @@ export type LetterGrade =
 export type GradeInputs = {
   /** Empty-board solutions available for the date. */
   initialSolutions: number;
-  /** “Show # of solutions with current pieces” (distinct board positions). */
+  /** “Show # of solutions possible” (distinct board positions). */
   hintsUsedCount: number;
   /** “Show # of Coverings per Square” clicks. */
   shadowShowCount: number;

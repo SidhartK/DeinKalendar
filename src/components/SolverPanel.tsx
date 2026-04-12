@@ -239,9 +239,9 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
               type="button"
               className="solver-btn solve-btn solver-btn--hint"
               onClick={startHint}
-              title="Show # of solutions with current pieces"
+              title="Show # of solutions possible"
             >
-              Show # of Solutions with Current Pieces (H)
+              Show # of Solutions Possible (H)
             </button>
           ) : (
             <button
