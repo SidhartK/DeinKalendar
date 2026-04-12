@@ -68,7 +68,7 @@ export default function PieceTray({
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
       if (shadowsVisible) {
-        if (e.key === "s" || e.key === "S") {
+        if (e.key === "v" || e.key === "V") {
           e.preventDefault();
           onSolve();
         } else if (e.key === "c" || e.key === "C") {
@@ -90,17 +90,16 @@ export default function PieceTray({
       } else if (e.key === "e" || e.key === "E") {
         e.preventDefault();
         flip();
-      } else if (e.key === "q" || e.key === "Q") {
+      } else if (e.key === "Escape") {
         e.preventDefault();
-        if (selectedPieceId != null) {
-          onSelectPiece(null);
-        } else {
-          onRemoveLastPiece();
-        }
+        onSelectPiece(null);
+      } else if (e.key === "x" || e.key === "X") {
+        e.preventDefault();
+        onRemoveLastPiece();
       } else if (e.key === "z" || e.key === "Z") {
         e.preventDefault();
         onRestoreLastRemoved();
-      } else if (e.key === "s" || e.key === "S") {
+      } else if (e.key === "v" || e.key === "V") {
         e.preventDefault();
         onSolve();
       } else if (e.key === "c" || e.key === "C") {
@@ -132,10 +131,10 @@ export default function PieceTray({
           type="button"
           className="control-btn deselect-btn"
           onClick={() => onSelectPiece(null)}
-          title="Deselect (Q)"
+          title="Deselect (Esc)"
           disabled={!selectedPieceId || shadowsVisible}
         >
-          Deselect (Q)
+          Deselect (Esc)
         </button>
       </div>
 

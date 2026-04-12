@@ -241,7 +241,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
               onClick={startHint}
               title="Show # of solutions possible"
             >
-              Show # of Solutions Possible (S)
+              Show # of Solutions Possible (V)
             </button>
           ) : (
             <button
