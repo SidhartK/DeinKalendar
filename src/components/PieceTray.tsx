@@ -24,6 +24,8 @@ interface PieceTrayProps {
   onShadowToggle: () => void;
   /** When true, piece selection and orientation controls are disabled. */
   shadowsVisible: boolean;
+  /** When true, the selected piece has been moved completely off the board via arrow keys. */
+  isPieceOffBoard?: boolean;
 }
 
 export default function PieceTray({
@@ -38,6 +40,7 @@ export default function PieceTray({
   onSolve,
   onShadowToggle,
   shadowsVisible,
+  isPieceOffBoard = false,
 }: PieceTrayProps) {
   const selectedPiece = pieces.find((p) => p.id === selectedPieceId) ?? null;
 
@@ -51,6 +54,11 @@ export default function PieceTray({
     onSetOrientation(flipOrientationIndex(selectedOrientation));
   }, [selectedPiece, selectedOrientation, onSetOrientation]);
 
+  const rotateCCW = useCallback(() => {
+    if (!selectedPiece) return;
+    onSetOrientation(rotateOrientation90CCW(selectedOrientation));
+  }, [selectedPiece, selectedOrientation, onSetOrientation]);
+
   const flipVertical = useCallback(() => {
     if (!selectedPiece) return;
     onSetOrientation(flipOrientationVertically(selectedOrientation));
@@ -60,10 +68,10 @@ export default function PieceTray({
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
       if (shadowsVisible) {
-        if (e.key === "h" || e.key === "H") {
+        if (e.key === "s" || e.key === "S") {
           e.preventDefault();
           onSolve();
-        } else if (e.key === "s" || e.key === "S") {
+        } else if (e.key === "c" || e.key === "C") {
           e.preventDefault();
           onShadowToggle();
         }
@@ -76,19 +84,12 @@ export default function PieceTray({
           e.preventDefault();
           onSelectPiece(piece.id === selectedPieceId ? null : piece.id);
         }
-      } else if (e.key === "r" || e.key === "R" || e.key === "ArrowRight") {
+      } else if (e.key === "r" || e.key === "R") {
         e.preventDefault();
         rotateForward();
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        if (!selectedPiece) return;
-        onSetOrientation(rotateOrientation90CCW(selectedOrientation));
       } else if (e.key === "e" || e.key === "E") {
         e.preventDefault();
         flip();
-      } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        e.preventDefault();
-        flipVertical();
       } else if (e.key === "q" || e.key === "Q") {
         e.preventDefault();
         if (selectedPieceId != null) {
@@ -96,13 +97,13 @@ export default function PieceTray({
         } else {
           onRemoveLastPiece();
         }
-      } else if (e.key === "w" || e.key === "W") {
+      } else if (e.key === "z" || e.key === "Z") {
         e.preventDefault();
         onRestoreLastRemoved();
-      } else if (e.key === "h" || e.key === "H") {
+      } else if (e.key === "s" || e.key === "S") {
         e.preventDefault();
         onSolve();
-      } else if (e.key === "s" || e.key === "S") {
+      } else if (e.key === "c" || e.key === "C") {
         e.preventDefault();
         onShadowToggle();
       }
@@ -138,6 +139,69 @@ export default function PieceTray({
         </button>
       </div>
 
+      <div className="tray-transform-bar">
+        {selectedPieceId != null && !shadowsVisible ? (
+          <div className="transform-buttons">
+            <button
+              type="button"
+              className="transform-btn"
+              onClick={rotateForward}
+              data-tooltip="Rotate 90° clockwise"
+              aria-label="Rotate 90 degrees clockwise"
+            >
+              <span className="transform-btn__tooltip-hit" aria-hidden="true" />
+              <span className="transform-btn__kbd-hint" aria-hidden="true">
+                R
+              </span>
+              <span className="transform-btn__glyph" aria-hidden="true">
+                ↻
+              </span>
+            </button>
+            <button
+              type="button"
+              className="transform-btn"
+              onClick={rotateCCW}
+              data-tooltip="Rotate 90° counter-clockwise"
+              aria-label="Rotate 90 degrees counter-clockwise"
+            >
+              <span className="transform-btn__tooltip-hit" aria-hidden="true" />
+              <span className="transform-btn__glyph" aria-hidden="true">
+                ↺
+              </span>
+            </button>
+            <button
+              type="button"
+              className="transform-btn"
+              onClick={flip}
+              data-tooltip="Flip horizontally"
+              aria-label="Flip horizontally"
+            >
+              <span className="transform-btn__tooltip-hit" aria-hidden="true" />
+              <span className="transform-btn__kbd-hint" aria-hidden="true">
+                E
+              </span>
+              <span className="transform-btn__glyph" aria-hidden="true">
+                ↔
+              </span>
+            </button>
+            <button
+              type="button"
+              className="transform-btn"
+              onClick={flipVertical}
+              data-tooltip="Flip vertically"
+              aria-label="Flip vertically"
+            >
+              <span className="transform-btn__tooltip-hit" aria-hidden="true" />
+              <span className="transform-btn__glyph" aria-hidden="true">
+                ↕
+              </span>
+            </button>
+          </div>
+        ) : (
+          <div className="transform-placeholder" />
+        )}
+      </div>
+
       <div
         className="piece-grid"
         aria-disabled={shadowsVisible}
@@ -156,6 +220,7 @@ export default function PieceTray({
                 }
                 isSelected={piece.id === selectedPieceId}
                 isPlaced={isPlaced}
+                isOffBoard={piece.id === selectedPieceId && isPieceOffBoard}
                 onClick={
                   isPlaced || shadowsVisible
                     ? undefined
@@ -174,24 +239,6 @@ export default function PieceTray({
               >
                 {piece.name}
               </span>
-              {!isPlaced && (
-                <button
-                  type="button"
-                  className="slot-flip-btn"
-                  disabled={shadowsVisible}
-                  onClick={() => {
-                    if (piece.id === selectedPieceId) {
-                      flip();
-                    } else {
-                      onSelectPiece(piece.id);
-                      onSetOrientation(flipOrientationIndex(0));
-                    }
-                  }}
-                  title="Flip"
-                >
-                  ↔ Flip
-                </button>
-              )}
             </div>
           );
         })}

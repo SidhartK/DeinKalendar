@@ -1,7 +1,6 @@
 "use client";
 
 import "./StatsPanel.css";
-import type { LetterGrade } from "../lib/grade";
 
 function formatDurationMs(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -16,8 +15,6 @@ export default function StatsPanel({
   coveringsButtonClickCount,
   coveringsSquaresViewedCount,
   initialSolutions,
-  gradeLetter,
-  gradeScore,
   onShare,
   shareStatus,
 }: {
@@ -26,8 +23,6 @@ export default function StatsPanel({
   coveringsButtonClickCount: number;
   coveringsSquaresViewedCount: number;
   initialSolutions: number | null;
-  gradeLetter: LetterGrade | null;
-  gradeScore: number | null;
   onShare: () => void;
   shareStatus: "idle" | "copied" | "error";
 }) {
@@ -35,14 +30,6 @@ export default function StatsPanel({
     <div className="solver-panel stats-panel">
       <h3>Stats</h3>
       <div className="stats-panel-grid" role="list">
-        <div className="stats-panel-item" role="listitem">
-          <span className="stats-panel-label">Grade</span>
-          <span className="stats-panel-value">
-            {gradeLetter == null || gradeScore == null
-              ? "—"
-              : `${gradeLetter} (${gradeScore.toFixed(1)})`}
-          </span>
-        </div>
         <div className="stats-panel-item" role="listitem">
           <span className="stats-panel-label">Time</span>
           <span className="stats-panel-value">

@@ -10,6 +10,8 @@ interface PiecePreviewProps {
   orientation: Orientation;
   isSelected?: boolean;
   isPlaced?: boolean;
+  /** When true, renders piece cells in red to indicate the piece is off the board. */
+  isOffBoard?: boolean;
   onClick?: () => void;
 }
 
@@ -18,6 +20,7 @@ export default function PiecePreview({
   orientation,
   isSelected,
   isPlaced,
+  isOffBoard = false,
   onClick,
 }: PiecePreviewProps) {
   const cells = orientation.cells;
@@ -30,11 +33,11 @@ export default function PiecePreview({
   const startRow = Math.floor((PREVIEW_GRID_SIZE - rows) / 2);
   const startCol = Math.floor((PREVIEW_GRID_SIZE - cols) / 2);
   const cellSet = new Set(cells.map(([r, c]) => `${r},${c}`));
-  const color = PIECE_COLORS[pieceId] ?? "#888";
+  const color = isOffBoard ? "#e74c3c" : (PIECE_COLORS[pieceId] ?? "#888");
 
   return (
     <div
-      className={`piece-preview ${isSelected ? "selected" : ""} ${isPlaced ? "placed" : ""}`}
+      className={`piece-preview ${isSelected ? "selected" : ""} ${isPlaced ? "placed" : ""} ${isOffBoard ? "off-board" : ""}`}
       onClick={isPlaced ? undefined : onClick}
       style={isSelected ? { borderColor: color } : undefined}
     >

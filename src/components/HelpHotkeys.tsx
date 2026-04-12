@@ -5,16 +5,17 @@ import "./HelpHotkeys.css";
 
 const HOTKEYS = [
   { key: "1–8", action: "Select piece" },
+  { key: "↑ ↓ ← →", action: "Move piece on board (when hovering over board)" },
   { key: "R", action: "Rotate selected piece" },
   { key: "E", action: "Flip selected piece" },
   {
     key: "Q",
     action: "Deselect (if holding a piece) or remove last piece",
   },
-  { key: "Space", action: "Place piece (when valid)" },
-  { key: "W", action: "Undo last removal" },
-  { key: "H", action: "Show # of solutions possible" },
-  { key: "S", action: "Show / hide # of coverings per square" },
+  { key: "Enter", action: "Place piece (when valid)" },
+  { key: "Z", action: "Undo removing a piece" },
+  { key: "S", action: "Show # of solutions possible" },
+  { key: "C", action: "Show / hide # of coverings per square" },
 ];
 
 export default function HelpHotkeys() {

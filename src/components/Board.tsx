@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  useState,
   useMemo,
   useCallback,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import type { CSSProperties } from "react";
 import {
@@ -30,6 +30,8 @@ interface BoardProps {
   selectedPiece: PieceDefinition | null;
   selectedOrientation: number;
   selectedAnchorCoord: Coord | null;
+  hoverCell: Coord | null;
+  onHoverCellChange: (cell: Coord | null) => void;
   onPlacePiece: (row: number, col: number) => void;
   onPickUpPiece: (pieceId: number, row: number, col: number) => void;
   shadowOverlay?: ShadowAnalysisPayload | null;
@@ -48,6 +50,8 @@ export default function Board({
   selectedPiece,
   selectedOrientation,
   selectedAnchorCoord,
+  hoverCell,
+  onHoverCellChange,
   onPlacePiece,
   onPickUpPiece,
   shadowOverlay,
@@ -55,7 +59,6 @@ export default function Board({
   onCoveringsViewed,
   pieceNameById = {},
 }: BoardProps) {
-  const [hoverCell, setHoverCell] = useState<Coord | null>(null);
   const [shadowPinned, setShadowPinned] = useState<ShadowPanelState | null>(
     null
   );
@@ -219,17 +222,15 @@ export default function Board({
   const handleMouseEnterCell = useCallback(
     (row: number, col: number, e: React.MouseEvent<HTMLDivElement>) => {
       if (shadowsVisible) {
-        setHoverCell(null);
+        onHoverCellChange(null);
       } else {
-        setHoverCell([row, col]);
+        onHoverCellChange([row, col]);
       }
       // Hover-based coverings preview intentionally disabled; click a square to view coverings.
       void e;
       return;
     },
-    [
-      shadowsVisible,
-    ]
+    [shadowsVisible, onHoverCellChange]
   );
 
   const handleMouseLeaveCell = useCallback(() => {
@@ -238,13 +239,13 @@ export default function Board({
   }, []);
 
   const handleMouseLeaveBoard = useCallback(() => {
-    setHoverCell(null);
-  }, []);
+    onHoverCellChange(null);
+  }, [onHoverCellChange]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
-      if (e.key === " ") {
+      if (e.key === "Enter") {
         e.preventDefault();
         if (
           !shadowsVisible &&
@@ -357,6 +358,7 @@ export default function Board({
             shadowKeys={activeShadowKeys}
             shadowCatalog={shadowOverlay.shadowCatalog}
             pieceNameById={pieceNameById}
+            onClose={() => setShadowPinned(null)}
             onMouseEnter={() => {}}
             onMouseLeave={() => {}}
           />

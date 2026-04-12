@@ -78,7 +78,9 @@ self.addEventListener("message", (e: MessageEvent) => {
       collectShadowData,
       heavyCollection: collectShadowData,
       isCancelled: () => cancelled,
-      onProgress: (count) => sendMessage({ type: "progress", count }),
+      onProgress: collectShadowData
+        ? undefined
+        : (count) => sendMessage({ type: "progress", count }),
     });
 
     sendMessage({

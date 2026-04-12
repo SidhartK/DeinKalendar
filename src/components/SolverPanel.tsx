@@ -16,19 +16,10 @@ import {
 } from "../utils/pieces";
 import "./SolverPanel.css";
 
-function formatDurationMs(ms: number) {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
-
 interface SolverPanelProps {
   targetMonth: string;
   targetDay: number;
   placedPieces: PlacedPiece[];
-  /** Elapsed time since user first saw this date (session-local). */
-  elapsedMs: number | null;
   /** Marks solver used (e.g. celebration). */
   onHintRunStart?: () => void;
   /** Clears shadow overlay while a new shadow run is in flight. */
@@ -58,7 +49,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       targetMonth,
       targetDay,
       placedPieces,
-      elapsedMs,
       onHintRunStart,
       onShadowRunStart,
       onSolveHint,
@@ -71,6 +61,8 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
   ) {
     const [status, setStatus] = useState<SolverStatus>("idle");
     const [solutionCount, setSolutionCount] = useState(0);
+    /** Which run is in flight — refs alone do not re-render for progress UI. */
+    const [activeRunMode, setActiveRunMode] = useState<RunMode | null>(null);
     const workerRef = useRef<Worker | null>(null);
     const runModeRef = useRef<RunMode>("hint");
     const onShadowAnalysisRef = useRef(onShadowAnalysis);
@@ -90,6 +82,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       }
       setStatus("idle");
       setSolutionCount(0);
+      setActiveRunMode(null);
     }, [targetMonth, targetDay, placedPieces]);
 
     const ensureWorker = useCallback(() => {
@@ -111,15 +104,24 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
             cancelled?: boolean;
           };
           if (msg.type === "progress") {
-            setSolutionCount(msg.count ?? 0);
+            if (runModeRef.current === "hint") {
+              setSolutionCount(msg.count ?? 0);
+            }
           } else if (msg.type === "done") {
-            setSolutionCount(msg.totalCount ?? 0);
-            setStatus("done");
+            const mode = runModeRef.current;
+            if (mode === "hint") {
+              setSolutionCount(msg.totalCount ?? 0);
+              setStatus("done");
+            } else {
+              setSolutionCount(0);
+              setStatus("idle");
+            }
+            setActiveRunMode(null);
             if (msg.cancelled) return;
             if (
               msg.shadowCatalog &&
               Array.isArray(msg.shadowCells) &&
-              runModeRef.current === "shadow"
+              mode === "shadow"
             ) {
               onShadowAnalysisRef.current?.({
                 shadowCatalog: msg.shadowCatalog,
@@ -141,6 +143,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
       (mode: RunMode) => {
         setStatus("solving");
         setSolutionCount(0);
+        setActiveRunMode(mode);
         runModeRef.current = mode;
 
         if (mode === "hint") {
@@ -209,7 +212,13 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
 
     const handleStop = useCallback(() => {
       workerRef.current?.postMessage({ type: "stop" });
-      setStatus("done");
+      if (runModeRef.current === "hint") {
+        setStatus("done");
+      } else {
+        setStatus("idle");
+        setSolutionCount(0);
+      }
+      setActiveRunMode(null);
     }, []);
 
     const shadowToggleLabel = shadowsVisible
@@ -219,15 +228,6 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
     return (
       <div className="solver-panel">
         <h3>Solver</h3>
-
-        <div className="solver-results" style={{ marginBottom: 12 }}>
-          <div className="solver-stat">
-            <span className="solver-label">Time</span>
-            <span className="solver-value">
-              {elapsedMs == null ? "—" : formatDurationMs(elapsedMs)}
-            </span>
-          </div>
-        </div>
 
         <p className="solver-description">
           <strong># of Solutions</strong> counts how many ways the remaining
@@ -241,7 +241,7 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
               onClick={startHint}
               title="Show # of solutions possible"
             >
-              Show # of Solutions Possible (H)
+              Show # of Solutions Possible (S)
             </button>
           ) : (
             <button
@@ -274,12 +274,17 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
                     : "Compute # of coverings per square and show it"
               }
             >
-              {shadowToggleLabel} (S)
+              {shadowToggleLabel} (C)
             </button>
           ) : null}
         </div>
 
-        {status !== "idle" && (
+        {status === "solving" && activeRunMode === "shadow" && (
+          <div className="solver-results">
+            <div className="solver-status solving">Computing coverings…</div>
+          </div>
+        )}
+        {status === "solving" && activeRunMode === "hint" && (
           <div className="solver-results">
             <div className="solver-stat">
               <span className="solver-label"># of Solutions</span>
@@ -287,9 +292,17 @@ const SolverPanel = forwardRef<SolverPanelRef, SolverPanelProps>(
                 {solutionCount.toLocaleString()}
               </span>
             </div>
-            {status === "solving" && (
-              <div className="solver-status solving">Solving…</div>
-            )}
+            <div className="solver-status solving">Solving…</div>
+          </div>
+        )}
+        {status === "done" && (
+          <div className="solver-results">
+            <div className="solver-stat">
+              <span className="solver-label"># of Solutions</span>
+              <span className="solver-value">
+                {solutionCount.toLocaleString()}
+              </span>
+            </div>
           </div>
         )}
       </div>

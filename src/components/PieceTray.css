@@ -80,13 +80,11 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Grid of pieces: 2 rows × 4 pieces per row; equal row height so Flip buttons align */
 .piece-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
   gap: 10px;
-  min-height: 260px;
   min-width: 0;
 }
 
@@ -109,22 +107,126 @@
   color: #888 !important;
 }
 
-.slot-flip-btn {
-  margin-top: auto;
-  padding: 4px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  background: #0f3460;
-  color: #e0e0e0;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+.tray-transform-bar {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  overflow: visible;
+  z-index: 2;
 }
 
-.slot-flip-btn:hover {
+.transform-placeholder {
+  height: 2px;
+  width: 100%;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.transform-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(4px, 2cqw, 10px);
+  width: 100%;
+  min-width: 0;
+}
+
+.transform-btn {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: #0f3460;
+  color: #e0e0e0;
+  font-size: clamp(1.1rem, 12cqw, 2.35rem);
+  line-height: 1;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.transform-btn__tooltip-hit {
+  position: absolute;
+  display: block;
+  /* 75% × 75% of the button, centered (12.5% inset on each side) */
+  inset: 12.5%;
+  z-index: 2;
+  border-radius: 6px;
+}
+
+.transform-btn__kbd-hint {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  z-index: 4;
+  font-size: clamp(0.5rem, 2.8cqw, 0.7rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  user-select: none;
+}
+
+.transform-btn__glyph {
+  position: relative;
+  z-index: 1;
+  display: block;
+  line-height: 1;
+  user-select: none;
+}
+
+/* Tooltip: mouse only over inner 75% square; keyboard focus still shows full button tooltip */
+.transform-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  max-width: min(280px, 72vw);
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #e8e8ea;
+  color: #1a1a1a;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  word-wrap: break-word;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+}
+
+.transform-btn[data-tooltip]:has(.transform-btn__tooltip-hit:hover)::after,
+.transform-btn[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.transform-btn:hover {
   background: #1a5276;
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.transform-btn:active {
+  transform: scale(0.96);
 }
 
 .all-placed {
@@ -166,6 +268,17 @@
   filter: grayscale(0.8);
   cursor: default;
   pointer-events: none;
+}
+
+.piece-preview.off-board {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.4);
+  animation: off-board-pulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes off-board-pulse {
+  from { box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.4); }
+  to   { box-shadow: 0 0 6px 2px rgba(231, 76, 60, 0.7); }
 }
 
 .piece-preview.placed .piece-mini-cell.filled {
@@ -262,8 +375,7 @@
     font-size: 11px;
   }
 
-  .slot-flip-btn {
-    padding: 3px 8px;
-    font-size: 10px;
+  .transform-buttons {
+    gap: 4px;
   }
 }

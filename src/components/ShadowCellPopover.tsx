@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import {
   GRID_ROWS,
@@ -56,6 +56,7 @@ interface ShadowCellPopoverProps {
   shadowKeys: string[];
   shadowCatalog: Record<string, ShadowCatalogEntry>;
   pieceNameById: Record<number, string>;
+  onClose: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
@@ -65,10 +66,28 @@ export default function ShadowCellPopover({
   shadowKeys,
   shadowCatalog,
   pieceNameById,
+  onClose,
   onMouseEnter,
   onMouseLeave,
 }: ShadowCellPopoverProps) {
   const [style, setStyle] = useState<CSSProperties>({});
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+      e.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   useLayoutEffect(() => {
     const margin = 8;
@@ -99,11 +118,25 @@ export default function ShadowCellPopover({
     <div
       className="shadow-cell-popover"
       style={style}
-      role="tooltip"
+      role="dialog"
+      aria-label="Coverings of this cell"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="shadow-cell-popover-title">Placements covering this cell</div>
+      <div className="shadow-cell-popover-header">
+        <div className="shadow-cell-popover-title">
+          Coverings of this cell
+        </div>
+        <button
+          type="button"
+          className="shadow-cell-popover-close"
+          onClick={onClose}
+          title="Close (Esc)"
+          aria-label="Close (Esc)"
+        >
+          Close (Esc)
+        </button>
+      </div>
       <ul className="shadow-cell-popover-list">
         {validKeys.map((k) => {
             const entry = shadowCatalog[k]!;

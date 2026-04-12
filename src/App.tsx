@@ -6,6 +6,8 @@ import {
   Coord,
   PlacedPiece,
   GameAction,
+  GRID_ROWS,
+  GRID_COLS,
   type ShadowAnalysisPayload,
 } from "./types";
 import {
@@ -17,6 +19,7 @@ import {
   getPieceById,
   getAnchorCoord,
   getNormalizedTransformedCellsWithIds,
+  getAbsoluteCells,
 } from "./utils/pieces";
 import {
   validatePlacement,
@@ -30,8 +33,8 @@ import SolverPanel, { type SolverPanelRef } from "./components/SolverPanel";
 import HelpHotkeys from "./components/HelpHotkeys";
 import TutorialModal from "./components/TutorialModal";
 import StatsPanel from "./components/StatsPanel";
+import { hasSeenHowToPlay, markHowToPlaySeen } from "./lib/howToPlayStorage";
 import initialSolutionsByDate from "./data/initial_solutions_by_date.json";
-import { gradeResult } from "./lib/grade";
 import "./App.css";
 
 function formatDurationMs(ms: number) {
@@ -207,7 +210,7 @@ interface AppProps {
   competitionMode?: boolean;
   onSolutionFound?: (placedPieces: PlacedPiece[]) => boolean;
   onSolveHint?: (placedPieces: PlacedPiece[]) => void;
-  /** When true, open the How to Play modal once on mount (e.g. when starting Pi day challenge). */
+  /** When true, open the How to Play modal on mount (e.g. Pi competition start); ignores first-visit storage. */
   openTutorialOnMount?: boolean;
   /** Called when the user closes the tutorial if it was auto-opened via openTutorialOnMount (e.g. to start the competition timer). */
   onInitialTutorialClose?: () => void;
@@ -297,6 +300,7 @@ export default function App({
     "idle"
   );
   const [initialSolutionsForDate, setInitialSolutionsForDate] = useState<number | null>(null);
+  const [hoverCell, setHoverCell] = useState<Coord | null>(null);
 
   useEffect(() => {
     setShadowOverlay(null);
@@ -389,14 +393,20 @@ export default function App({
     if (openTutorialOnMount) {
       tutorialWasAutoOpenedRef.current = true;
       setShowTutorial(true);
+      return;
     }
-  }, [openTutorialOnMount]);
+    if (competitionMode) return;
+    if (!hasSeenHowToPlay()) {
+      setShowTutorial(true);
+    }
+  }, [openTutorialOnMount, competitionMode]);
 
   const handleTutorialClose = useCallback(() => {
     if (tutorialWasAutoOpenedRef.current) {
       tutorialWasAutoOpenedRef.current = false;
       onInitialTutorialClose?.();
     }
+    markHowToPlaySeen();
     setShowTutorial(false);
   }, [onInitialTutorialClose]);
 
@@ -424,18 +434,6 @@ export default function App({
     setInitialSolutionsForDate(typeof S === "number" ? S : null);
   }, [targetMonth, targetDay]);
 
-  const grade =
-    initialSolutionsForDate == null
-      ? null
-      : gradeResult({
-          initialSolutions: initialSolutionsForDate,
-          hintsUsedCount,
-          shadowShowCount,
-          coveringsSquaresViewedCount,
-          timeMinutes:
-            currentElapsedMs == null ? undefined : Math.max(0, currentElapsedMs / 60000),
-        });
-
   useEffect(() => {
     const timing = puzzleTimingByDateRef.current.get(currentDateKey);
     if (!timing) return;
@@ -460,7 +458,6 @@ export default function App({
 
     const lines = [
       `Calendar Puzzle — ${targetMonth} ${targetDay}`,
-      grade ? `Grade: ${grade.letter} (${grade.score.toFixed(1)})` : "Grade: —",
       elapsed != null ? `Time: ${formatDurationMs(elapsed)}` : "Time: —",
       `Initial solutions: ${initialSolutionsForDate == null ? "—" : initialSolutionsForDate.toLocaleString()}`,
       `Hints (distinct board positions): ${hintsUsedCount}`,
@@ -495,7 +492,6 @@ export default function App({
     currentDateKey,
     targetMonth,
     targetDay,
-    grade,
     initialSolutionsForDate,
     hintsUsedCount,
     shadowShowCount,
@@ -606,6 +602,54 @@ export default function App({
     }
     return getAnchorCoord(selectedPiece, selectedOrientation, selectedAnchorCellId);
   }, [selectedPiece, selectedOrientation, selectedAnchorCellId]);
+
+  // Clear hoverCell whenever the selected piece changes (placed, deselected, picked up).
+  useEffect(() => {
+    if (selectedPieceId == null) setHoverCell(null);
+  }, [selectedPieceId]);
+
+  // Whether all cells of the selected piece are completely off the board at the current hoverCell.
+  const isPieceOffBoard = useMemo(() => {
+    if (!selectedPiece || !hoverCell || !selectedAnchorCoord) return false;
+    const orientation = selectedPiece.orientations[selectedOrientation];
+    if (!orientation) return false;
+    const [anchorR, anchorC] = selectedAnchorCoord;
+    const placementRow = hoverCell[0] - anchorR;
+    const placementCol = hoverCell[1] - anchorC;
+    const cells = getAbsoluteCells(orientation, placementRow, placementCol);
+    return cells.every(
+      ([r, c]) => r < 0 || r >= GRID_ROWS || c < 0 || c >= GRID_COLS
+    );
+  }, [selectedPiece, selectedOrientation, selectedAnchorCoord, hoverCell]);
+
+  // Capture-phase arrow key handler: when a piece is held over the board, arrow keys
+  // move the piece instead of rotating/flipping it (which is handled by PieceTray's
+  // bubble-phase listener). stopImmediatePropagation prevents PieceTray from seeing
+  // the event when in move mode.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (selectedPieceId == null || hoverCell == null) return;
+
+      let dr = 0, dc = 0;
+      if (e.key === "ArrowUp") dr = -1;
+      else if (e.key === "ArrowDown") dr = 1;
+      else if (e.key === "ArrowLeft") dc = -1;
+      else if (e.key === "ArrowRight") dc = 1;
+      else return;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      setHoverCell((prev) => {
+        if (prev == null) return null;
+        const [r, c] = prev;
+        return [r + dr, c + dc] as Coord;
+      });
+    };
+
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [selectedPieceId, hoverCell]);
 
   const handleSelectPiece = useCallback(
     (id: number | null) => {
@@ -721,9 +765,6 @@ export default function App({
               {currentElapsedMs != null ? formatDurationMs(currentElapsedMs) : "—"}
             </p>
             <p className="celebration-subtitle">
-              Grade: {grade ? `${grade.letter} (${grade.score.toFixed(1)})` : "—"}
-            </p>
-            <p className="celebration-subtitle">
               Initial solutions:{" "}
               {initialSolutionsForDate == null
                 ? "—"
@@ -800,8 +841,6 @@ export default function App({
               coveringsButtonClickCount={shadowShowCount}
               coveringsSquaresViewedCount={coveringsSquaresViewedCount}
               initialSolutions={initialSolutionsForDate}
-              gradeLetter={grade?.letter ?? null}
-              gradeScore={grade?.score ?? null}
               onShare={handleShareResults}
               shareStatus={shareStatus}
             />
@@ -811,7 +850,6 @@ export default function App({
               targetMonth={targetMonth}
               targetDay={targetDay}
               placedPieces={placedPieces}
-              elapsedMs={currentElapsedMs}
               onHintRunStart={handleHintRunStart}
               onShadowRunStart={handleShadowRunStart}
               onSolveHint={handleSolveHintTracked}
@@ -852,6 +890,8 @@ export default function App({
               selectedPiece={selectedPiece ?? null}
               selectedOrientation={selectedOrientation}
               selectedAnchorCoord={selectedAnchorCoord}
+              hoverCell={hoverCell}
+              onHoverCellChange={setHoverCell}
               onPlacePiece={handlePlacePiece}
               onPickUpPiece={handlePickUpPiece}
               shadowOverlay={shadowsVisible ? shadowOverlay : null}
@@ -874,6 +914,7 @@ export default function App({
             onSolve={handleSolve}
             onShadowToggle={handleShadowToggle}
             shadowsVisible={shadowsVisible}
+            isPieceOffBoard={isPieceOffBoard}
           />
         </div>
       </main>
